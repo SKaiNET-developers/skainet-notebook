@@ -1,12 +1,12 @@
 plugins {
     alias(libs.plugins.jetbrainsKotlinJvm)
-    `maven-publish`
+    alias(libs.plugins.vanniktech.mavenPublish)
     alias(libs.plugins.johnrengelman.shadow)
 }
 
 dependencies {
-    implementation(libs.skainet.lang.api)
-    implementation(libs.skainet.lang.memory)
+    implementation(libs.skainet.lang.core)
+    implementation(libs.skainet.lang.models)
 }
 
 tasks.test {
@@ -20,47 +20,11 @@ kotlin {
 tasks.shadowJar {
     archiveClassifier.set("")
 
-    // Include sk.ainet.core dependencies
+    // Include all skainet dependencies including JVM variants
     dependencies {
-        include(dependency("sk.ainet.core:.*:.*"))
-    }
-}
-
-// Configure publishing
-publishing {
-    publications {
-        create<MavenPublication>("maven") {
-            groupId = "sk.ainet"
-            artifactId = "kotlin-notebook"
-            version = "0.0.1"
-
-            // Use only the shadow jar
-            artifact(tasks.shadowJar.get()) {
-                classifier = null
-            }
-            pom {
-                description.set("skainet-notebook")
-                name.set(project.name)
-                url.set("https://github.com/sk-ai-net/skainet-jupyter/")
-                licenses {
-                    license {
-                        name.set("MIT")
-                        distribution.set("repo")
-                    }
-                }
-                scm {
-                    url.set("https://github.com/sk-ai-net/skainet-jupyter/")
-                    connection.set("scm:git:git@github.com:sk-ai-net/skainet-jupyter.git")
-                    developerConnection.set("scm:git:ssh://git@github.com:sk-ai-net/skainet-jupyter.git")
-                }
-                developers {
-                    developer {
-                        id.set("sk-ai-net")
-                        name.set("sk-ai-net")
-                    }
-                }
-            }
-        }
-
+        include(dependency("sk.ainet.core:skainet-lang-core"))
+        include(dependency("sk.ainet.core:skainet-lang-models"))
+        include(dependency("sk.ainet.core:skainet-lang-core-jvm"))
+        include(dependency("sk.ainet.core:skainet-lang-models-jvm"))
     }
 }

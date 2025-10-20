@@ -1,12 +1,11 @@
 [versions]
 kotlin = "2.2.10"
 shadow = "8.1.1"
-skainet = "0.0.9"
-
+skainet = "0.0.1.2"
 
 [libraries]
-skainet-lang-api = { module = "sk.ainet.core:skainet-lang-api", version.ref = "skainet" }
-skainet-lang-memory = { module = "sk.ainet.core:skainet-lang-memory", version.ref = "skainet" }
+skainet-lang-core = { module = "sk.ainet.core:skainet-lang-core", version.ref = "skainet" }
+skainet-lang-models = { module = "sk.ainet.core:skainet-lang-models", version.ref = "skainet" }
 
 
 
@@ -17,3 +16,4 @@ skainet-lang-memory = { module = "sk.ainet.core:skainet-lang-memory", version.re
 [plugins]
 jetbrainsKotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.34.0" }
