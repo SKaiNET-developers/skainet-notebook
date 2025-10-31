@@ -1,19 +1,17 @@
 [versions]
-kotlin = "2.2.10"
+kotlin = "2.2.21"
 shadow = "8.1.1"
-skainet = "0.0.1.2"
+skainet = "0.1.0"
+dokka = "2.1.0"
 
 [libraries]
 skainet-lang-core = { module = "sk.ainet.core:skainet-lang-core", version.ref = "skainet" }
 skainet-lang-models = { module = "sk.ainet.core:skainet-lang-models", version.ref = "skainet" }
-
-
-
-#//skainet-modelZoo = { module = "sk.ai.net:model-zoo", version.ref = "skainet" }
-#skainet-gguf = { module = "sk.ai.net:gguf", version.ref = "skainet" }
-
+skainet-compile-core = { module = "sk.ainet.core:skainet-compile-core", version.ref = "skainet" }
+skainet-backend-cpu = { module = "sk.ainet.core:skainet-backend-cpu", version.ref = "skainet" }
 
 [plugins]
 jetbrainsKotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
 vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.34.0" }
+jetbrains-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }

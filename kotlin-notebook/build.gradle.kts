@@ -2,11 +2,14 @@ plugins {
     alias(libs.plugins.jetbrainsKotlinJvm)
     alias(libs.plugins.vanniktech.mavenPublish)
     alias(libs.plugins.johnrengelman.shadow)
+    alias(libs.plugins.jetbrains.dokka)
 }
 
 dependencies {
     implementation(libs.skainet.lang.core)
-    implementation(libs.skainet.lang.models)
+    implementation(libs.skainet.compile.core)
+    implementation(libs.skainet.backend.cpu)
+    testImplementation(kotlin("test"))
 }
 
 tasks.test {
@@ -26,5 +29,7 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-lang-models"))
         include(dependency("sk.ainet.core:skainet-lang-core-jvm"))
         include(dependency("sk.ainet.core:skainet-lang-models-jvm"))
+        include(dependency("sk.ainet.core:skainet-compile-core"))
+        include(dependency("sk.ainet.core:skainet-backend-cpu"))
     }
 }
