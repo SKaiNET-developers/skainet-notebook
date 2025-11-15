@@ -81,7 +81,7 @@ To build and run the jupyter notebooks locally, you need to first build and publ
 git clone https://github.com/sk-ai-net/skainet.git
 cd skainet
 # Checkout specific working commit (WIP)
-git checkout 6f61c63
+git checkout 7eaf1f6
 ----
 
 2. **Build and publish to Maven local**:
