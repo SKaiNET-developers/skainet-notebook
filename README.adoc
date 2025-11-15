@@ -15,6 +15,42 @@ Empower your deep machine learning data science workflows with Kotlin's type saf
 * Type-safe data manipulation
 * Rich markdown and documentation support
 
+== local development
+
+=== Clone source code SKaiNET and SKaiNET Kotlin Notebook
+
+.SKaiNET
+[source,bash]
+----
+git clone https://github.com/sk-ai-net/skainet.git
+cd skainet
+# Checkout specific working commit (WIP)
+git checkout 22cfbbe
+cd ../
+----
+
+.
+[source,bash]
+----
+git clone https://github.com/sk-ai-net/skainet-notebook.git
+cd skainet-notebook
+# Checkout specific working commit (WIP)
+git checkout develop
+cd ../
+----
+
+=== Publish libs into local maven
+
+[source,bash]
+----
+cd skainet
+./gradlew publishToMavenLocal
+cd ../
+cd skainet-notebook
+./gradlew publishToMavenLocal
+cd ../
+----
+
 == Using with Jupyter Notebook
 
 === IntelliJ IDEA
@@ -29,32 +65,9 @@ You can create Kotlin notebooks directly in IntelliJ IDEA using one of these met
 * Press kbd:[Cmd+Shift+N] (macOS) or kbd:[Ctrl+Alt+Shift+Insert] (Windows/Linux)
 * Select `Kotlin Notebook`
 
-3. *From Welcome Screen*:
-* Navigate to `Kotlin Notebooks` tab
-* Click `New Notebook`
-
-== Basic Usage
+== SKaiNET notebook dependency
 
 [source,kotlin]
 ----
-// Import SKaiNET libraries
-import ai.tribit.SKaiNET.*
 
-// Example code
-val data = DataFrame.readCsv("data.csv")
-data.head(5).show()
 ----
-
-Here’s a concise instruction snippet for setting up dependencies in Gradle KTS to consume your open-source project:
-
-== Usage:
-
-=== Configure dependencies
-SKaiNET nobetook is released as single artifact on maven central so you need just add depnedecy to the released version in your build `build.gradle.kts`:
-
-
-```kotlin
-dependcies {
-    implementation("sk.ainet.app:kotlin-notebook:0.0.1")
-}
-```

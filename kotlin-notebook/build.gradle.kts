@@ -9,6 +9,8 @@ dependencies {
     implementation(libs.skainet.lang.core)
     implementation(libs.skainet.compile.core)
     implementation(libs.skainet.backend.cpu)
+    implementation(libs.skainet.lang.models)
+
     testImplementation(kotlin("test"))
 }
 
