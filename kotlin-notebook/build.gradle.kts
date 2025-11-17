@@ -1,3 +1,8 @@
+import org.gradle.api.attributes.Category
+import org.gradle.api.attributes.DocsType
+import org.gradle.api.attributes.Usage
+import org.gradle.api.tasks.bundling.Jar
+
 plugins {
     alias(libs.plugins.jetbrainsKotlinJvm)
     alias(libs.plugins.vanniktech.mavenPublish)
@@ -5,11 +10,29 @@ plugins {
     alias(libs.plugins.jetbrains.dokka)
 }
 
+// Configuration to resolve source JARs for dependencies (we'll include only SKaiNET libs)
+val skainetSources by configurations.creating {
+    isCanBeResolved = true
+    isCanBeConsumed = false
+    // Ask specifically for the 'sources' variants
+    attributes {
+        attribute(Category.CATEGORY_ATTRIBUTE, objects.named(Category.DOCUMENTATION))
+        attribute(DocsType.DOCS_TYPE_ATTRIBUTE, objects.named(DocsType.SOURCES))
+        attribute(Usage.USAGE_ATTRIBUTE, objects.named(Usage.JAVA_RUNTIME))
+    }
+}
+
 dependencies {
     implementation(libs.skainet.lang.core)
+    implementation(libs.skainet.lang.models)
     implementation(libs.skainet.compile.core)
     implementation(libs.skainet.backend.cpu)
-    implementation(libs.skainet.lang.models)
+
+    // Resolve sources for SKaiNET libraries to package into our -sources.jar
+    add("skainetSources", libs.skainet.lang.core)
+    add("skainetSources", libs.skainet.lang.models)
+    add("skainetSources", libs.skainet.compile.core)
+    add("skainetSources", libs.skainet.backend.cpu)
 
     testImplementation(kotlin("test"))
 }
@@ -20,6 +43,23 @@ tasks.test {
 
 kotlin {
     jvmToolchain(21)
+}
+
+
+val sourcesJar by tasks.registering(Jar::class) {
+    archiveClassifier.set("sources")
+    from(kotlin.sourceSets.main.get().kotlin)
+
+    // Also package sources from SKaiNET dependencies (if they publish sources)
+    from(providers.provider {
+        configurations["skainetSources"].resolve().map { zipTree(it) }
+    })
+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+}
+
+artifacts {
+    add("archives", sourcesJar)
 }
 
 tasks.shadowJar {
@@ -33,5 +73,7 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-lang-models-jvm"))
         include(dependency("sk.ainet.core:skainet-compile-core"))
         include(dependency("sk.ainet.core:skainet-backend-cpu"))
+        include(dependency("sk.ainet.core:skainet-compile-core-jvm"))
+        include(dependency("sk.ainet.core:skainet-backend-cpu-jvm"))
     }
 }
