@@ -1,5 +1,11 @@
 = SKaiNET Kotlin Notebook
 
+image:https://img.shields.io/badge/License-MIT-yellow.svg[License: MIT, link=LICENCE]
+
+image:https://img.shields.io/maven-central/v/sk.ainet.app/kotlin-notebook.svg[Maven Central, link=https://central.sonatype.com/artifact/sk.ainet.app/kotlin-notebook]
+
+
+
 [.lead]
 Empower your deep machine learning data science workflows with Kotlin's type safety and expressiveness in https://kotlinlang.org/docs/kotlin-notebook-overview.html[Kotlin Notebooks].
 
@@ -14,42 +20,6 @@ Empower your deep machine learning data science workflows with Kotlin's type saf
 * Seamless integration with popular ML libraries
 * Type-safe data manipulation
 * Rich markdown and documentation support
-
-== local development
-
-=== Clone source code SKaiNET and SKaiNET Kotlin Notebook
-
-.SKaiNET
-[source,bash]
-----
-git clone https://github.com/sk-ai-net/skainet.git
-cd skainet
-# Checkout specific working commit (WIP)
-git checkout 22cfbbe
-cd ../
-----
-
-.
-[source,bash]
-----
-git clone https://github.com/sk-ai-net/skainet-notebook.git
-cd skainet-notebook
-# Checkout specific working commit (WIP)
-git checkout develop
-cd ../
-----
-
-=== Publish libs into local maven
-
-[source,bash]
-----
-cd skainet
-./gradlew publishToMavenLocal
-cd ../
-cd skainet-notebook
-./gradlew publishToMavenLocal
-cd ../
-----
 
 == Using with Jupyter Notebook
 
@@ -67,7 +37,23 @@ You can create Kotlin notebooks directly in IntelliJ IDEA using one of these met
 
 == SKaiNET notebook dependency
 
-[source,kotlin]
+Use SKaiNET directly in a Kotlin Notebook via Maven Central.
+
+[source]
+----
+@file:DependsOn("sk.ainet.app:kotlin-notebook:0.2.0")
 ----
 
+.code
+[source, Kotlin]
+----
+val input = data<FP32, Float>(ctx) {
+    tensor<FP32, Float>() {
+        shape(5) {
+            fromArray(
+                floatArrayOf(1f,2f,3f,4f,5f)
+            )
+        }
+    }
+}
 ----
