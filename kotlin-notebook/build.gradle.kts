@@ -25,14 +25,21 @@ val skainetSources by configurations.creating {
 dependencies {
     implementation(libs.skainet.lang.core)
     implementation(libs.skainet.lang.models)
+    implementation(libs.skainet.lang.kan)
     implementation(libs.skainet.compile.core)
     implementation(libs.skainet.backend.cpu)
+    implementation(libs.skainet.data.api)
+    implementation(libs.skainet.data.simple)
+
 
     // Resolve sources for SKaiNET libraries to package into our -sources.jar
     add("skainetSources", libs.skainet.lang.core)
     add("skainetSources", libs.skainet.lang.models)
+    add("skainetSources", libs.skainet.lang.kan)
     add("skainetSources", libs.skainet.compile.core)
     add("skainetSources", libs.skainet.backend.cpu)
+    add("skainetSources", libs.skainet.data.api)
+    add("skainetSources", libs.skainet.data.simple)
 
     testImplementation(kotlin("test"))
 }
@@ -71,9 +78,12 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-lang-models"))
         include(dependency("sk.ainet.core:skainet-lang-core-jvm"))
         include(dependency("sk.ainet.core:skainet-lang-models-jvm"))
+        include(dependency("sk.ainet.core:skainet-lang-kan-jvm"))
         include(dependency("sk.ainet.core:skainet-compile-core"))
         include(dependency("sk.ainet.core:skainet-backend-cpu"))
         include(dependency("sk.ainet.core:skainet-compile-core-jvm"))
         include(dependency("sk.ainet.core:skainet-backend-cpu-jvm"))
+        include(dependency("sk.ainet.core:skainet-data-api-jvm"))
+        include(dependency("sk.ainet.core:skainet-data-simple-jvm"))
     }
 }

@@ -1,14 +1,18 @@
 [versions]
 kotlin = "2.2.21"
 shadow = "8.1.1"
-skainet = "0.2.0"
+skainet = "0.3.0"
 dokka = "2.1.0"
 
 [libraries]
 skainet-lang-core = { module = "sk.ainet.core:skainet-lang-core", version.ref = "skainet" }
 skainet-lang-models = { module = "sk.ainet.core:skainet-lang-models", version.ref = "skainet" }
+skainet-lang-kan = { module = "sk.ainet.core:skainet-lang-kan", version.ref = "skainet" }
 skainet-compile-core = { module = "sk.ainet.core:skainet-compile-core", version.ref = "skainet" }
 skainet-backend-cpu = { module = "sk.ainet.core:skainet-backend-cpu", version.ref = "skainet" }
+skainet-data-api = { module = "sk.ainet.core:skainet-data-api", version.ref = "skainet" }
+skainet-data-simple = { module = "sk.ainet.core:skainet-data-basic", version.ref = "skainet" }
+
 
 [plugins]
 jetbrainsKotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
