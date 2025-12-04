@@ -13,7 +13,7 @@ package sk.ainet.app.notebook
  * Version information for the notebook library
  */
 object NotebookInfo {
-    const val VERSION = "0.2.0"
+    const val VERSION = "0.4.0"
     const val NAME = "SKaiNET Kotlin Notebook"
     
     /**

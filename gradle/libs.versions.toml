@@ -1,12 +1,13 @@
 [versions]
 kotlin = "2.2.21"
 shadow = "8.1.1"
-skainet = "0.3.0"
+skainet = "0.4.0"
 dokka = "2.1.0"
 
 [libraries]
 skainet-lang-core = { module = "sk.ainet.core:skainet-lang-core", version.ref = "skainet" }
 skainet-lang-models = { module = "sk.ainet.core:skainet-lang-models", version.ref = "skainet" }
+skainet-model-yolo = { module = "sk.ainet.core:skainet-model-yolo", version.ref = "skainet" }
 skainet-lang-kan = { module = "sk.ainet.core:skainet-lang-kan", version.ref = "skainet" }
 skainet-compile-core = { module = "sk.ainet.core:skainet-compile-core", version.ref = "skainet" }
 skainet-backend-cpu = { module = "sk.ainet.core:skainet-backend-cpu", version.ref = "skainet" }

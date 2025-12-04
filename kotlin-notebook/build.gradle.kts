@@ -25,6 +25,7 @@ val skainetSources by configurations.creating {
 dependencies {
     implementation(libs.skainet.lang.core)
     implementation(libs.skainet.lang.models)
+    implementation(libs.skainet.model.yolo)
     implementation(libs.skainet.lang.kan)
     implementation(libs.skainet.compile.core)
     implementation(libs.skainet.backend.cpu)
@@ -40,6 +41,7 @@ dependencies {
     add("skainetSources", libs.skainet.backend.cpu)
     add("skainetSources", libs.skainet.data.api)
     add("skainetSources", libs.skainet.data.simple)
+    add("skainetSources", libs.skainet.model.yolo)
 
     testImplementation(kotlin("test"))
 }
@@ -78,6 +80,7 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-lang-models"))
         include(dependency("sk.ainet.core:skainet-lang-core-jvm"))
         include(dependency("sk.ainet.core:skainet-lang-models-jvm"))
+        include(dependency("sk.ainet.core:skainet-model-yolo-jvm"))
         include(dependency("sk.ainet.core:skainet-lang-kan-jvm"))
         include(dependency("sk.ainet.core:skainet-compile-core"))
         include(dependency("sk.ainet.core:skainet-backend-cpu"))
