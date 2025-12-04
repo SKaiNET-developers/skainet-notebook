@@ -6,7 +6,7 @@ import org.gradle.api.tasks.bundling.Jar
 plugins {
     alias(libs.plugins.jetbrainsKotlinJvm)
     alias(libs.plugins.vanniktech.mavenPublish)
-    alias(libs.plugins.johnrengelman.shadow)
+    alias(libs.plugins.shadow.jar)
     alias(libs.plugins.jetbrains.dokka)
 }
 

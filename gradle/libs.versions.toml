@@ -1,6 +1,6 @@
 [versions]
 kotlin = "2.2.21"
-shadow = "8.1.1"
+shadow = "9.2.2"
 skainet = "0.4.0"
 dokka = "2.1.0"
 
@@ -17,6 +17,6 @@ skainet-data-simple = { module = "sk.ainet.core:skainet-data-basic", version.ref
 
 [plugins]
 jetbrainsKotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
-johnrengelman-shadow = { id = "com.github.johnrengelman.shadow", version.ref = "shadow" }
+shadow-jar = { id = "com.gradleup.shadow", version.ref = "shadow" }
 vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.35.0" }
 jetbrains-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
