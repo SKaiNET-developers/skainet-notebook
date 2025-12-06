@@ -34,8 +34,12 @@ fun BufferedImage.toBase64(format: String = "png"): String {
  * Decode bytes into a BufferedImage using ImageIO.
  */
 fun bytesToImage(bytes: ByteArray): BufferedImage {
-    val img = ImageIO.read(ByteArrayInputStream(bytes))
-        ?: throw IllegalArgumentException("Unable to decode image from provided bytes")
+    val img = try {
+        ImageIO.read(ByteArrayInputStream(bytes))
+    } catch (t: Throwable) {
+        throw IllegalArgumentException("Unable to decode image from provided bytes: ${t.message}", t)
+    }
+        ?: throw IllegalArgumentException("Unable to decode image from provided bytes: not a known image format or data is corrupted")
     return img
 }
 
@@ -43,13 +47,23 @@ fun bytesToImage(bytes: ByteArray): BufferedImage {
  * Decode an image from a filesystem [Path]. Validates existence and readability.
  */
 fun pathToImage(path: Path): BufferedImage {
-    require(Files.exists(path)) { "File not found: $path" }
-    require(Files.isRegularFile(path)) { "Not a regular file: $path" }
-    Files.newInputStream(path).use { input ->
-        val img = ImageIO.read(input)
-        if (img != null) return img
+    // Extra hint if the caller passed an URL-looking string as a file path
+    require(Files.exists(path)) {
+        val p = path.toString()
+        val urlHint = if (p.startsWith("http://") || p.startsWith("https://"))
+            " (Did you mean to pass a URL? Use display(URL(\"$p\")) or display(URL(\"...\")))" else ""
+        "File not found: $path$urlHint"
     }
-    throw IllegalArgumentException("Unable to read image from path: $path")
+    require(Files.isRegularFile(path)) { "Not a regular file: $path" }
+    try {
+        Files.newInputStream(path).use { input ->
+            val img = ImageIO.read(input)
+            if (img != null) return img
+        }
+    } catch (t: Throwable) {
+        throw IllegalArgumentException("Unable to read image from path: $path — ${t.message}", t)
+    }
+    throw IllegalArgumentException("Unable to read image from path: $path — unsupported or corrupted image format")
 }
 
 /**
@@ -61,11 +75,15 @@ fun stringToImage(path: String): BufferedImage = pathToImage(Path.of(path))
  * Decode an image from a [URL].
  */
 fun urlToImage(url: URL): BufferedImage {
-    url.openStream().use { input ->
-        val img = ImageIO.read(input)
-        if (img != null) return img
+    try {
+        url.openStream().use { input ->
+            val img = ImageIO.read(input)
+            if (img != null) return img
+        }
+    } catch (t: Throwable) {
+        throw IllegalArgumentException("Unable to read image from URL: $url — ${t.message}", t)
     }
-    throw IllegalArgumentException("Unable to read image from URL: $url")
+    throw IllegalArgumentException("Unable to read image from URL: $url — unsupported or corrupted image format")
 }
 
 /**
@@ -111,6 +129,50 @@ fun display(url: URL) = render(urlToImage(url))
  */
 fun display(images: List<BufferedImage>) {
     renderGrid(images)
+}
+
+/**
+ * Convenience overload: display a heterogeneous list of image-like inputs.
+ * Elements are converted via [toImage]. Invalid items are skipped and reported.
+ */
+fun display(images: List<Any>, configure: DisplayOptions.() -> Unit = {}) {
+    if (images.isEmpty()) {
+        emitHtml("<div></div>")
+        return
+    }
+    val successes = mutableListOf<BufferedImage>()
+    val errors = mutableListOf<String>()
+    images.forEachIndexed { idx, any ->
+        try {
+            successes += toImage(any)
+        } catch (t: Throwable) {
+            errors += "[$idx] ${any::class.java.name}: ${t.message}"
+        }
+    }
+    if (successes.isEmpty()) {
+        // Nothing to render – surface a clear error
+        val msg = buildString {
+            append("No valid images to display. Validation errors (n=")
+            append(errors.size)
+            append("):\n")
+            errors.take(5).forEach { append(" - ").append(it).append('\n') }
+            if (errors.size > 5) append(" - ... and ").append(errors.size - 5).append(" more")
+        }
+        throw IllegalArgumentException(msg)
+    }
+
+    // Print a summary of skipped items to the console for visibility in notebooks
+    if (errors.isNotEmpty()) {
+        val warn = buildString {
+            append("[DEBUG_LOG] display(List<Any>): skipped ")
+            append(errors.size)
+            append(" invalid item(s). First issues:\n")
+            errors.take(3).forEach { append(" - ").append(it).append('\n') }
+            if (errors.size > 3) append(" - ... and ").append(errors.size - 3).append(" more")
+        }
+        println(warn)
+    }
+    renderGrid(successes, configure)
 }
 
 /**
