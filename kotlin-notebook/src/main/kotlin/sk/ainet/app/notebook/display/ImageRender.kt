@@ -1,5 +1,7 @@
 package sk.ainet.app.notebook.display
 
+import java.awt.Graphics2D
+import java.awt.RenderingHints
 import java.awt.image.BufferedImage
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -142,8 +144,16 @@ fun emitHtml(html: String) {
  */
 fun render(img: BufferedImage, configure: DisplayOptions.() -> Unit = {}) {
     val opts = DisplayOptions().apply(configure)
-    val html = buildImgTag(img, opts)
+    checkJvm11()
+    val t0 = System.nanoTime()
+    val (html, meta) = buildImgTagWithMeta(img, opts)
     emitHtml(html)
+    val t1 = System.nanoTime()
+    if (opts.measureTime) {
+        val ms = (t1 - t0) / 1_000_000.0
+        println("[DEBUG_LOG] Image encode+render: ${"%.2f".format(ms)} ms (" +
+                "${meta.origW}x${meta.origH} -> ${meta.outW}x${meta.outH}, cacheHit=${meta.cacheHit})")
+    }
 }
 
 /**
@@ -156,17 +166,35 @@ fun renderGrid(images: List<BufferedImage>, configure: DisplayOptions.() -> Unit
         return
     }
     val opts = DisplayOptions().apply(configure)
+    checkJvm11()
     val sb = StringBuilder()
     sb.append("<div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;\">")
     images.forEach { img ->
-        sb.append(buildImgTag(img, opts))
+        val t0 = if (opts.measureTime) System.nanoTime() else 0L
+        val (tag, meta) = buildImgTagWithMeta(img, opts)
+        sb.append(tag)
+        if (opts.measureTime) {
+            val t1 = System.nanoTime()
+            val ms = (t1 - t0) / 1_000_000.0
+            println("[DEBUG_LOG] Grid item encode: ${"%.2f".format(ms)} ms (" +
+                    "${meta.origW}x${meta.origH} -> ${meta.outW}x${meta.outH}, cacheHit=${meta.cacheHit})")
+        }
     }
     sb.append("</div>")
     emitHtml(sb.toString())
 }
 
-private fun buildImgTag(img: BufferedImage, opts: DisplayOptions): String {
-    val base64 = img.toBase64("png")
+private data class BuildMeta(val cacheHit: Boolean, val origW: Int, val origH: Int, val outW: Int, val outH: Int)
+
+private fun buildImgTagWithMeta(img: BufferedImage, opts: DisplayOptions): Pair<String, BuildMeta> {
+    val origW = img.width
+    val origH = img.height
+    val processed = maybeDownscale(img, opts)
+    val outW = processed.width
+    val outH = processed.height
+
+    val (base64, hit) = encodeBase64Cached(processed, opts)
+
     val sb = StringBuilder()
     sb.append("<img src=\"data:image/png;base64,")
         .append(base64)
@@ -185,11 +213,76 @@ private fun buildImgTag(img: BufferedImage, opts: DisplayOptions): String {
         sb.append(" style=\"border:1px solid #ccc;\"")
     }
 
-    // Alt text per image. Always include alt attribute for accessibility; empty if null
-    val altText = opts.alt?.let { htmlEscape(it) } ?: ""
+    // Alt text per image. Always include alt attribute for accessibility
+    val altDefault = "image ${outW}x${outH}"
+    val altText = opts.alt?.takeIf { it.isNotBlank() }?.let { htmlEscape(it) } ?: htmlEscape(altDefault)
     sb.append(" alt=\"").append(altText).append("\"")
     sb.append("/>")
-    return sb.toString()
+    return sb.toString() to BuildMeta(hit, origW, origH, outW, outH)
+}
+
+private fun maybeDownscale(img: BufferedImage, opts: DisplayOptions): BufferedImage {
+    var scale = 1.0
+    opts.autoDownscaleMaxWidth?.let { maxW ->
+        if (img.width > maxW) scale = minOf(scale, maxW.toDouble() / img.width)
+    }
+    opts.autoDownscaleMaxHeight?.let { maxH ->
+        if (img.height > maxH) scale = minOf(scale, maxH.toDouble() / img.height)
+    }
+    opts.autoDownscaleMaxPixels?.let { maxPx ->
+        val curPx = img.width.toLong() * img.height.toLong()
+        if (curPx > maxPx) {
+            val factor = kotlin.math.sqrt(maxPx.toDouble() / curPx.toDouble())
+            scale = minOf(scale, factor)
+        }
+    }
+    if (scale >= 1.0) return img
+    val newW = maxOf(1, (img.width * scale).toInt())
+    val newH = maxOf(1, (img.height * scale).toInt())
+    val type = if (img.transparency == java.awt.Transparency.OPAQUE) BufferedImage.TYPE_INT_RGB else BufferedImage.TYPE_INT_ARGB
+    val out = BufferedImage(newW, newH, type)
+    val g2 = out.createGraphics()
+    try {
+        g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION, RenderingHints.VALUE_INTERPOLATION_BILINEAR)
+        g2.setRenderingHint(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY)
+        g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+        g2.drawImage(img, 0, 0, newW, newH, null)
+    } finally {
+        g2.dispose()
+    }
+    return out
+}
+
+private fun encodeBase64Cached(img: BufferedImage, opts: DisplayOptions): Pair<String, Boolean> {
+    if (!opts.enableCache) {
+        return img.toBase64("png") to false
+    }
+    val keyPart = opts.cacheKey ?: (System.identityHashCode(img).toString())
+    val key = "png:${keyPart}:${img.width}x${img.height}"
+    Base64Cache.get(key)?.let { return it to true }
+    val encoded = img.toBase64("png")
+    Base64Cache.put(key, encoded)
+    return encoded to false
+}
+
+private object Base64Cache {
+    private const val MAX = 64
+    private val map = object : LinkedHashMap<String, String>(MAX, 0.75f, true) {
+        override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, String>?): Boolean = size > MAX
+    }
+    @Synchronized fun get(key: String): String? = map[key]
+    @Synchronized fun put(key: String, value: String) { map[key] = value }
+}
+
+private fun checkJvm11() {
+    try {
+        val feature = Runtime.version().feature()
+        if (feature < 11) {
+            println("[DEBUG_LOG] Warning: Kotlin Notebook image display targets JVM 11+, current=${feature}")
+        }
+    } catch (_: Throwable) {
+        // Ignore if Runtime.version is unavailable (very old JDKs)
+    }
 }
 
 private fun htmlEscape(input: String): String = buildString(input.length) {

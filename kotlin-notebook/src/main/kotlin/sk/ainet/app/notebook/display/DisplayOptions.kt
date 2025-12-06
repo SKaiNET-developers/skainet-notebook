@@ -33,4 +33,22 @@ data class DisplayOptions(
      *   style wins per CSS specificity rules.
      */
     var cssClass: String? = null,
+    /** When true, print simple timing for encode + render in ms (stdout). */
+    var measureTime: Boolean = false,
+    /**
+     * Optional auto-downscale guard. If set, very large images will be downscaled before encoding
+     * to avoid heavy memory usage. The final dimensions preserve aspect ratio.
+     * The scale factor is computed as the minimum across constraints below.
+     */
+    var autoDownscaleMaxWidth: Int? = null,
+    var autoDownscaleMaxHeight: Int? = null,
+    /** Maximum total pixel count (w*h). If exceeded, the image is scaled down accordingly. */
+    var autoDownscaleMaxPixels: Int? = null,
+    /** Enable simple base64 result caching to avoid repeated encodes of the same image/size. */
+    var enableCache: Boolean = false,
+    /**
+     * Optional explicit cache key. When provided and [enableCache] is true, this key will be used
+     * to identify cached base64 for the current image rendition (size is appended automatically).
+     */
+    var cacheKey: String? = null,
 )
