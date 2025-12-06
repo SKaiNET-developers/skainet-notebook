@@ -105,8 +105,7 @@ fun display(path: String) = render(stringToImage(path))
 fun display(url: URL) = render(urlToImage(url))
 
 /**
- * Convenience overload: display multiple images sequentially.
- * Note: Grid or layout rendering is provided in follow-up tasks; here we simply emit images one by one.
+ * Convenience overload: display multiple images in a responsive grid.
  */
 fun display(images: List<BufferedImage>) {
     renderGrid(images)
