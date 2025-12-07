@@ -1,8 +1,10 @@
 [versions]
 kotlin = "2.2.21"
 shadow = "9.2.2"
-skainet = "0.4.0"
+skainet = "0.5.0"
 dokka = "2.1.0"
+kotlinJupyter = "0.16.0-736"
+
 
 [libraries]
 skainet-lang-core = { module = "sk.ainet.core:skainet-lang-core", version.ref = "skainet" }
@@ -13,6 +15,10 @@ skainet-compile-core = { module = "sk.ainet.core:skainet-compile-core", version.
 skainet-backend-cpu = { module = "sk.ainet.core:skainet-backend-cpu", version.ref = "skainet" }
 skainet-data-api = { module = "sk.ainet.core:skainet-data-api", version.ref = "skainet" }
 skainet-data-simple = { module = "sk.ainet.core:skainet-data-basic", version.ref = "skainet" }
+skainet-io-core = { module = "sk.ainet.core:skainet-io-core", version.ref = "skainet" }
+skainet-io-gguf = { module = "sk.ainet.core:skainet-io-gguf", version.ref = "skainet" }
+skainet-io-onnx = { module = "sk.ainet.core:skainet-io-onnx", version.ref = "skainet" }
+
 
 
 [plugins]
@@ -20,3 +26,4 @@ jetbrainsKotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 shadow-jar = { id = "com.gradleup.shadow", version.ref = "shadow" }
 vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.35.0" }
 jetbrains-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
+jupyter-api = { id = "org.jetbrains.kotlin.jupyter.api", version.ref = "kotlinJupyter" }
