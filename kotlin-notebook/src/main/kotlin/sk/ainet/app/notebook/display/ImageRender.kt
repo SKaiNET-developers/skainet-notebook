@@ -12,15 +12,6 @@ import javax.imageio.ImageIO
 import org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
 
 /**
- * Core rendering utilities for inline HTML image display in Kotlin Notebooks.
- *
- * The APIs here avoid hard dependencies on the Kotlin Notebook runtime by using
- * reflection for HTML(html).display() when available, and falling back to printing
- * the HTML string otherwise. This keeps the module light-weight while working
- * seamlessly inside notebooks.
- */
-
-/**
  * Encode this BufferedImage to a Base64 string. PNG is used by default.
  */
 fun BufferedImage.toBase64(format: String = "png"): String {
@@ -164,8 +155,6 @@ fun display(images: List<Any>, configure: DisplayOptions.() -> Unit = {}):Any {
  * Falls back to println when executed outside of a notebook environment.
  */
 fun emitHtml(html: String): Any {
-    // Always print so tests and non-notebook environments can capture the HTML output
-    println(html)
     // Return a simple value to keep API stable outside notebooks
     // We intentionally avoid constructing MimeTypedResult here to keep behavior deterministic in tests
     return html

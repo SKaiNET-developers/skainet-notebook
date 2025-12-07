@@ -12,12 +12,18 @@ public enum class Layout {
     HW
 }
 
-public fun <T: DType, V> Tensor<T, V>.batchToImage(memoryLayout: Layout = Layout.HWC): List<BufferedImage> {
+public fun <T : DType, V> Tensor<T, V>.batchToImage(memoryLayout: Layout = Layout.HWC): List<BufferedImage> {
     val dims = this.shape.dimensions
 
     // Helper to render a single image using the same logic as toImage
     fun renderSingle(height: Int, width: Int, channels: Int, indexer: (Int, Int, Int) -> Any?): BufferedImage {
-        require(channels in setOf(1, 3, 4)) { "Only 1 (grayscale), 3 (RGB), or 4 (RGBA) channels supported, got $channels" }
+        require(
+            channels in setOf(
+                1,
+                3,
+                4
+            )
+        ) { "Only 1 (grayscale), 3 (RGB), or 4 (RGBA) channels supported, got $channels" }
 
         val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
 
@@ -47,6 +53,10 @@ public fun <T: DType, V> Tensor<T, V>.batchToImage(memoryLayout: Layout = Layout
                 val b: Int
                 val a: Int
                 if (channels == 1) {
+
+                    //val u = b.toInt() and 0xFF
+                    //colors[i] = u / 255f
+
                     val v = toByte(valueToFloat(indexer(y, x, 0)))
                     r = v; g = v; b = v; a = 255
                 } else if (channels >= 3) {
@@ -77,6 +87,7 @@ public fun <T: DType, V> Tensor<T, V>.batchToImage(memoryLayout: Layout = Layout
                 renderSingle(h, w, c) { y, x, ch -> this.data[ni, y, x, ch] }
             }
         }
+
         Layout.NCHW -> {
             require(dims.size == 4) { "NCHW expects rank 4 tensor (N,C,H,W), got rank ${dims.size} with shape ${this.shape}" }
             val n = dims[0]
@@ -87,6 +98,7 @@ public fun <T: DType, V> Tensor<T, V>.batchToImage(memoryLayout: Layout = Layout
                 renderSingle(h, w, c) { y, x, ch -> this.data[ni, ch, y, x] }
             }
         }
+
         Layout.CHW, Layout.HWC, Layout.HW -> {
             // Not batched: delegate to single image conversion
             listOf(this.toImage(memoryLayout))
@@ -94,7 +106,7 @@ public fun <T: DType, V> Tensor<T, V>.batchToImage(memoryLayout: Layout = Layout
     }
 }
 
-public fun <T: DType, V> Tensor<T, V>.toImage(memoryLayout: Layout = Layout.HWC): BufferedImage {
+public fun <T : DType, V> Tensor<T, V>.toImage(memoryLayout: Layout = Layout.HWC): BufferedImage {
     val dims = this.shape.dimensions
 
     // Determine width, height, channels, and an indexer based on layout
@@ -109,6 +121,7 @@ public fun <T: DType, V> Tensor<T, V>.toImage(memoryLayout: Layout = Layout.HWC)
             channels = dims[2]
             { y: Int, x: Int, ch: Int -> this.data[y, x, ch] }
         }
+
         Layout.HW -> {
             require(dims.size == 2) { "HW expects rank 2 tensor (H,W), got rank ${dims.size} with shape ${this.shape}" }
             height = dims[0]
@@ -116,6 +129,7 @@ public fun <T: DType, V> Tensor<T, V>.toImage(memoryLayout: Layout = Layout.HWC)
             channels = 1
             { y: Int, x: Int, _: Int -> this.data[y, x] }
         }
+
         Layout.CHW -> {
             require(dims.size == 3) { "CHW expects rank 3 tensor (C,H,W), got rank ${dims.size} with shape ${this.shape}" }
             channels = dims[0]
@@ -123,6 +137,7 @@ public fun <T: DType, V> Tensor<T, V>.toImage(memoryLayout: Layout = Layout.HWC)
             width = dims[2]
             { y: Int, x: Int, ch: Int -> this.data[ch, y, x] }
         }
+
         Layout.NHWC -> {
             require(dims.size == 4) { "NHWC expects rank 4 tensor (N,H,W,C), got rank ${dims.size} with shape ${this.shape}" }
             height = dims[1]
@@ -130,6 +145,7 @@ public fun <T: DType, V> Tensor<T, V>.toImage(memoryLayout: Layout = Layout.HWC)
             channels = dims[3]
             { y: Int, x: Int, ch: Int -> this.data[0, y, x, ch] }
         }
+
         Layout.NCHW -> {
             require(dims.size == 4) { "NCHW expects rank 4 tensor (N,C,H,W), got rank ${dims.size} with shape ${this.shape}" }
             channels = dims[1]
@@ -169,7 +185,9 @@ public fun <T: DType, V> Tensor<T, V>.toImage(memoryLayout: Layout = Layout.HWC)
             val b: Int
             val a: Int
             if (channels == 1) {
-                val v = toByte(valueToFloat(indexer(y, x, 0)))
+                //val u = b.toInt() and 0xFF
+                //colors[i] = u / 255f
+                val v = toByte(valueToFloat(indexer(y, x, 0)) / 255f)
                 r = v; g = v; b = v; a = 255
             } else if (channels >= 3) {
                 r = toByte(valueToFloat(indexer(y, x, 0)))
@@ -194,7 +212,11 @@ private fun valueToFloat(v: Any?): Float = when (v) {
     is Int -> v.toFloat()
     is Long -> v.toFloat()
     is Short -> v.toFloat()
-    is Byte -> v.toFloat()
+    // Interpret Byte as UNSIGNED when converting to pixel intensity.
+    // Many datasets (e.g., MNIST) store grayscale pixels in 0..255.
+    // Using signed Byte (-128..127) would make bright pixels negative and
+    // clamp them to 0, resulting in near-black images. Convert via 0xFF mask.
+    is Byte -> (v.toInt() and 0xFF).toFloat()
     is UByte -> v.toFloat()
     is UInt -> v.toFloat()
     is UShort -> v.toFloat()
