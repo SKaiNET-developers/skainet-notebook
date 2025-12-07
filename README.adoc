@@ -41,7 +41,7 @@ Use SKaiNET directly in a Kotlin Notebook via Maven Central.
 
 [source]
 ----
-@file:DependsOn("sk.ainet.app:kotlin-notebook:0.4.0")
+@file:DependsOn("sk.ainet.app:kotlin-notebook:0.5.0")
 ----
 
 .code
@@ -60,91 +60,12 @@ val input = data<FP32, Float>(ctx) {
 
 == Inline image display (Quick Start)
 
-This module provides simple, Kotlin‑idiomatic inline image rendering for Kotlin notebooks, inspired by Python's PIL `display()` ergonomics. See the PRD for context: link:./image-prd.md[Image Rendering PRD].
-
-=== 1) Add dependency
+You can convert tensors to images and show them in a Kotlin notebook using our utils:
 
 [source]
 ----
-@file:DependsOn("sk.ainet.app:kotlin-notebook:0.4.0")
+import sk.ainet.app.notebook.tools.Layout
+import sk.ainet.app.notebook.tools.toImage
+
+imageTensor.toImage(Layout.CHW)
 ----
-
-=== 2) Display a BufferedImage
-
-[source]
-----
-val img = java.awt.image.BufferedImage(128, 128, java.awt.image.BufferedImage.TYPE_INT_RGB).apply {
-    val g = createGraphics()
-    g.color = java.awt.Color(0x33, 0x99, 0xFF)
-    g.fillRect(0, 0, width, height)
-    g.dispose()
-}
-
-sk.ainet.app.notebook.display.display(img)
-----
-
-=== 3) Display from different sources
-
-[source]
-----
-// From filesystem path (String)
-sk.ainet.app.notebook.display.display("/path/to/sample.jpg")
-
-// From bytes
-val bytes: ByteArray = java.nio.file.Files.readAllBytes(java.nio.file.Path.of("/path/to/sample.png"))
-sk.ainet.app.notebook.display.display(bytes)
-
-// From URL
-sk.ainet.app.notebook.display.display(java.net.URL("https://example.com/sample.png"))
-----
-
-=== 4) Options DSL (size, alt, border, cssClass)
-
-[source]
-----
-sk.ainet.app.notebook.display.display(img) {
-    width = 256
-    height = 256
-    alt = "Demo image"
-    border = true
-    cssClass = null // optional
-}
-----
-
-=== 5) Multi‑image grid
-
-[source]
-----
-val imgs = List(4) { idx ->
-    java.awt.image.BufferedImage(96, 96, java.awt.image.BufferedImage.TYPE_INT_RGB).apply {
-        val g = createGraphics()
-        g.color = java.awt.Color((50 + idx * 40) % 255, 120, 200)
-        g.fillRect(0, 0, width, height)
-        g.dispose()
-    }
-}
-
-sk.ainet.app.notebook.display.display(imgs) { border = true }
-----
-
-=== API Reference (summary)
-
-- Core dispatcher:
-  - `display(image: Any, configure: DisplayOptions.() -> Unit = {})`
-    - Supports: `BufferedImage`, `ByteArray`, `String` (path), `Path`, `URL`.
-
-- Overloads:
-  - `display(img: BufferedImage)`
-  - `display(bytes: ByteArray)`
-  - `display(path: String)`
-  - `display(url: URL)`
-  - `display(images: List<Any>, configure: DisplayOptions.() -> Unit = {})` (grid)
-
-- DisplayOptions fields:
-  - `width: Int?`, `height: Int?`, `alt: String?`, `border: Boolean`, `cssClass: String?`
-  - Non‑functional helpers: `measureTime: Boolean`, simple auto‑downscale guards: `autoDownscaleMaxWidth/Height/Pixels`, and caching flags.
-
-Notes:
-- Rendering uses inline HTML `<img>` with base64 data URLs via Kotlin Notebook rich output.
-- No Swing windows are used; output is always inline.
-- Behavior aims to mirror Python PIL ergonomics: one‑line display, automatic type handling, and REPL‑friendly usage.
