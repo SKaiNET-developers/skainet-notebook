@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.6.3] - 2026-01-10
+### Changed
+- Updated to SKaiNET 0.6.3.
+- Re-export SKaiNET classes als typealias in sk.ainet.app.notebook package
+
 ## [0.5.1] - 2025-12-26
 ### Fixed
 - Version alignment in NotebookInfo and general maintenance.
