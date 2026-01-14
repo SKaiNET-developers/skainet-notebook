@@ -1,9 +1,9 @@
 [versions]
 kotlin = "2.2.21"
 shadow = "9.3.1"
-skainet = "0.6.3"
+skainet = "0.7.1"
 dokka = "2.1.0"
-kotlinJupyter = "0.17.0-766"
+kotlinJupyter = "0.16.0-736"
 
 
 [libraries]
@@ -11,7 +11,9 @@ skainet-lang-core = { module = "sk.ainet.core:skainet-lang-core", version.ref = 
 skainet-lang-models = { module = "sk.ainet.core:skainet-lang-models", version.ref = "skainet" }
 skainet-model-yolo = { module = "sk.ainet.core:skainet-model-yolo", version.ref = "skainet" }
 skainet-lang-kan = { module = "sk.ainet.core:skainet-lang-kan", version.ref = "skainet" }
+skainet-lang-dag = { module = "sk.ainet.core:skainet-lang-dag", version.ref = "skainet" }
 skainet-compile-core = { module = "sk.ainet.core:skainet-compile-core", version.ref = "skainet" }
+skainet-compile-dag = { module = "sk.ainet.core:skainet-compile-dag", version.ref = "skainet" }
 skainet-backend-cpu = { module = "sk.ainet.core:skainet-backend-cpu", version.ref = "skainet" }
 skainet-data-api = { module = "sk.ainet.core:skainet-data-api", version.ref = "skainet" }
 skainet-data-simple = { module = "sk.ainet.core:skainet-data-basic", version.ref = "skainet" }
