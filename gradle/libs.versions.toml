@@ -3,7 +3,7 @@ kotlin = "2.2.21"
 shadow = "9.3.1"
 skainet = "0.8.3"
 dokka = "2.1.0"
-kotlinJupyter = "0.16.0-736"
+kotlinJupyter = "0.17.2-782"
 
 
 [libraries]
