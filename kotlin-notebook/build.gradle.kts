@@ -11,6 +11,34 @@ plugins {
     alias(libs.plugins.jupyter.api)
 }
 
+val generateVersionInfo by tasks.registering {
+    val version = libs.versions.skainet.get()
+    val outputDir = layout.buildDirectory.dir("generated/kotlin/sk/ainet/app/notebook")
+    inputs.property("version", version)
+    outputs.dir(outputDir)
+
+    doLast {
+        val versionFile = outputDir.get().file("Version.kt").asFile
+        versionFile.parentFile.mkdirs()
+        versionFile.writeText(
+            """
+            package sk.ainet.app.notebook
+
+            internal object GeneratedVersion {
+                const val VERSION = "$version"
+            }
+            """.trimIndent()
+        )
+    }
+}
+
+kotlin {
+    jvmToolchain(21)
+    sourceSets.main {
+        kotlin.srcDir(generateVersionInfo)
+    }
+}
+
 // Configuration to resolve source JARs for dependencies (we'll include only SKaiNET libs)
 val skainetSources by configurations.creating {
     isCanBeResolved = true
@@ -24,6 +52,7 @@ val skainetSources by configurations.creating {
 }
 
 dependencies {
+    compileOnly("org.jetbrains.kotlinx:kotlin-jupyter-api:${libs.versions.kotlinJupyter.get()}")
     implementation(libs.skainet.lang.core)
     implementation(libs.skainet.lang.models)
     implementation(libs.skainet.model.yolo)
@@ -61,9 +90,6 @@ tasks.test {
     useJUnitPlatform()
 }
 
-kotlin {
-    jvmToolchain(21)
-}
 
 
 val sourcesJar by tasks.registering(Jar::class) {

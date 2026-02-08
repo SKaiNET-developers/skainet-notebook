@@ -155,8 +155,7 @@ fun display(images: List<Any>, configure: DisplayOptions.() -> Unit = {}):Any {
  * Falls back to println when executed outside of a notebook environment.
  */
 fun emitHtml(html: String): Any {
-    // Return a simple value to keep API stable outside notebooks
-    // We intentionally avoid constructing MimeTypedResult here to keep behavior deterministic in tests
+    println(html)
     return html
 }
 
