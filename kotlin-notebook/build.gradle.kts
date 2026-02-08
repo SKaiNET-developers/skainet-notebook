@@ -37,6 +37,8 @@ dependencies {
     implementation(libs.skainet.io.core)
     implementation(libs.skainet.io.gguf)
     implementation(libs.skainet.io.onnx)
+    implementation(libs.skainet.app.kllama)
+
 
 
     // Resolve sources for SKaiNET libraries to package into our -sources.jar
@@ -53,6 +55,7 @@ dependencies {
     add("skainetSources", libs.skainet.io.core)
     add("skainetSources", libs.skainet.io.gguf)
     add("skainetSources", libs.skainet.io.onnx)
+    add("skainetSources", libs.skainet.app.kllama)
 
     testImplementation(kotlin("test"))
 }
@@ -107,5 +110,6 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-io-core-jvm"))
         include(dependency("sk.ainet.core:skainet-io-gguf-jvm"))
         include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))
+        include(dependency("sk.ainet.core:skainet-apps-kllama-jvm"))
     }
 }

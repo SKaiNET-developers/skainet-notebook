@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-02-08
+
+### Changed
+- Updated SKaiNET libraries to version 0.11.0.
+
 ## [0.8.3] - 2026-01-18
 ### Changed
 - Updated to SKaiNET 0.8.3.
