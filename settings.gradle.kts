@@ -10,6 +10,7 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven { url = uri("https://pkg.jetbrains.space/public/p/kotlin/kotlin-jupyter") }
     }
 }
 

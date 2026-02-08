@@ -6,7 +6,6 @@ import org.gradle.api.tasks.bundling.Jar
 plugins {
     alias(libs.plugins.jetbrainsKotlinJvm)
     alias(libs.plugins.vanniktech.mavenPublish)
-    alias(libs.plugins.shadow.jar)
     alias(libs.plugins.jetbrains.dokka)
     alias(libs.plugins.jupyter.api)
 }
@@ -51,39 +50,57 @@ val skainetSources by configurations.creating {
     }
 }
 
+repositories {
+    mavenCentral()
+    maven { url = uri("https://pkg.jetbrains.space/public/p/kotlin/kotlin-jupyter") }
+}
+
+configurations.runtimeClasspath {
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlin-jupyter-api")
+    exclude(group = "org.jetbrains.kotlinx", module = "kotlin-jupyter-api-annotations")
+}
+
 dependencies {
     compileOnly("org.jetbrains.kotlinx:kotlin-jupyter-api:${libs.versions.kotlinJupyter.get()}")
-    implementation(libs.skainet.lang.core)
-    implementation(libs.skainet.lang.models)
-    implementation(libs.skainet.model.yolo)
-    implementation(libs.skainet.lang.kan)
-    implementation(libs.skainet.lang.dag)
-    implementation(libs.skainet.compile.core)
-    implementation(libs.skainet.compile.dag)
-    implementation(libs.skainet.backend.cpu)
-    implementation(libs.skainet.data.api)
-    implementation(libs.skainet.data.simple)
-    implementation(libs.skainet.io.core)
-    implementation(libs.skainet.io.gguf)
-    implementation(libs.skainet.io.onnx)
+    
+    val skainetExclusions: ExternalModuleDependency.() -> Unit = {
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlin-jupyter-api")
+        exclude(group = "org.jetbrains.kotlinx", module = "kotlin-jupyter-api-annotations")
+    }
 
+    api(libs.skainet.lang.core, skainetExclusions)
+    api(libs.skainet.lang.models, skainetExclusions)
+    api(libs.skainet.model.yolo, skainetExclusions)
+    api(libs.skainet.lang.kan, skainetExclusions)
+    api(libs.skainet.lang.dag, skainetExclusions)
+    api(libs.skainet.compile.core, skainetExclusions)
+    api(libs.skainet.compile.dag, skainetExclusions)
+    api(libs.skainet.backend.cpu, skainetExclusions)
+    api(libs.skainet.data.api, skainetExclusions)
+    api(libs.skainet.data.simple, skainetExclusions)
+    api(libs.skainet.io.core, skainetExclusions)
+    api(libs.skainet.io.gguf, skainetExclusions)
+    api(libs.skainet.io.onnx, skainetExclusions)
 
-    // Resolve sources for SKaiNET libraries to package into our -sources.jar
-    add("skainetSources", libs.skainet.lang.core)
-    add("skainetSources", libs.skainet.lang.models)
-    add("skainetSources", libs.skainet.lang.kan)
-    add("skainetSources", libs.skainet.lang.dag)
-    add("skainetSources", libs.skainet.compile.core)
-    add("skainetSources", libs.skainet.compile.dag)
-    add("skainetSources", libs.skainet.backend.cpu)
-    add("skainetSources", libs.skainet.data.api)
-    add("skainetSources", libs.skainet.data.simple)
-    add("skainetSources", libs.skainet.model.yolo)
-    add("skainetSources", libs.skainet.io.core)
-    add("skainetSources", libs.skainet.io.gguf)
-    add("skainetSources", libs.skainet.io.onnx)
+    skainetSources(libs.skainet.lang.core)
+    skainetSources(libs.skainet.lang.models)
+    skainetSources(libs.skainet.lang.kan)
+    skainetSources(libs.skainet.lang.dag)
+    skainetSources(libs.skainet.compile.core)
+    skainetSources(libs.skainet.compile.dag)
+    skainetSources(libs.skainet.backend.cpu)
+    skainetSources(libs.skainet.data.api)
+    skainetSources(libs.skainet.data.simple)
+    skainetSources(libs.skainet.model.yolo)
+    skainetSources(libs.skainet.io.core)
+    skainetSources(libs.skainet.io.gguf)
+    skainetSources(libs.skainet.io.onnx)
 
     testImplementation(kotlin("test"))
+}
+
+tasks.processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
 
 tasks.test {
@@ -97,8 +114,19 @@ val sourcesJar by tasks.registering(Jar::class) {
     from(kotlin.sourceSets.main.get().kotlin)
 
     // Also package sources from SKaiNET dependencies (if they publish sources)
+    // We filter to ensure we only try to open valid JAR/ZIP files
     from(providers.provider {
-        configurations["skainetSources"].resolve().map { zipTree(it) }
+        configurations["skainetSources"].resolvedConfiguration.resolvedArtifacts
+            .map { it.file }
+            .filter { it.extension == "jar" || it.extension == "zip" }
+            .mapNotNull { 
+                try {
+                    zipTree(it)
+                } catch (e: Exception) {
+                    println("Warning: Could not read $it as zipTree: ${e.message}")
+                    null
+                }
+            }
     })
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -108,30 +136,8 @@ artifacts {
     add("archives", sourcesJar)
 }
 
-tasks.shadowJar {
-    archiveClassifier.set("")
+// No shadowJar needed. We'll use a regular JAR and the maven-publish plugin will handle dependencies in POM.
 
-    // Include all skainet dependencies including JVM variants
-    dependencies {
-        include(dependency("sk.ainet.core:skainet-lang-core"))
-        include(dependency("sk.ainet.core:skainet-lang-models"))
-        include(dependency("sk.ainet.core:skainet-lang-core-jvm"))
-        include(dependency("sk.ainet.core:skainet-lang-models-jvm"))
-        include(dependency("sk.ainet.core:skainet-model-yolo-jvm"))
-        include(dependency("sk.ainet.core:skainet-lang-kan-jvm"))
-        include(dependency("sk.ainet.core:skainet-lang-dag"))
-        include(dependency("sk.ainet.core:skainet-lang-dag-jvm"))
-        include(dependency("sk.ainet.core:skainet-compile-core"))
-        include(dependency("sk.ainet.core:skainet-compile-core-jvm"))
-        include(dependency("sk.ainet.core:skainet-compile-dag"))
-        include(dependency("sk.ainet.core:skainet-compile-dag-jvm"))
-        include(dependency("sk.ainet.core:skainet-backend-cpu"))
-        include(dependency("sk.ainet.core:skainet-compile-core-jvm"))
-        include(dependency("sk.ainet.core:skainet-backend-cpu-jvm"))
-        include(dependency("sk.ainet.core:skainet-data-api-jvm"))
-        include(dependency("sk.ainet.core:skainet-data-simple-jvm"))
-        include(dependency("sk.ainet.core:skainet-io-core-jvm"))
-        include(dependency("sk.ainet.core:skainet-io-gguf-jvm"))
-        include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))
-    }
+tasks.jar {
+    archiveClassifier.set("")
 }
