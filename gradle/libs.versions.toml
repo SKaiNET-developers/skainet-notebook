@@ -27,6 +27,6 @@ skainet-app-kllama = { module = "sk.ainet.core:skainet-apps-kllama", version.ref
 [plugins]
 jetbrainsKotlinJvm = { id = "org.jetbrains.kotlin.jvm", version.ref = "kotlin" }
 shadow-jar = { id = "com.gradleup.shadow", version.ref = "shadow" }
-vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.35.0" }
+vanniktech-mavenPublish = { id = "com.vanniktech.maven.publish", version = "0.36.0" }
 jetbrains-dokka = { id = "org.jetbrains.dokka", version.ref = "dokka" }
 jupyter-api = { id = "org.jetbrains.kotlin.jupyter.api", version.ref = "kotlinJupyter" }
