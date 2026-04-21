@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
 import javax.imageio.ImageIO
+import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
 
 /**
@@ -58,9 +59,15 @@ fun pathToImage(path: Path): BufferedImage {
 }
 
 /**
- * Decode an image from a filesystem path provided as [String].
+ * Decode an image from a [String] source. Strings starting with http://, https://,
+ * or file:// are treated as URLs; everything else is a filesystem path.
  */
-fun stringToImage(path: String): BufferedImage = pathToImage(Path.of(path))
+fun stringToImage(path: String): BufferedImage =
+    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("file://")) {
+        urlToImage(URL(path))
+    } else {
+        pathToImage(Path.of(path))
+    }
 
 /**
  * Decode an image from a [URL].
@@ -151,30 +158,27 @@ fun display(images: List<Any>, configure: DisplayOptions.() -> Unit = {}):Any {
 }
 
 /**
- * Emit raw HTML to the Kotlin Notebook output area, if the rich HTML API is present.
- * Falls back to println when executed outside of a notebook environment.
+ * Emit raw HTML to the Kotlin Notebook output area.
+ * Returns a MimeTypedResult so Jupyter renders the HTML instead of showing it as text.
  */
-fun emitHtml(html: String): Any {
-    // Return a simple value to keep API stable outside notebooks
-    // We intentionally avoid constructing MimeTypedResult here to keep behavior deterministic in tests
-    return html
-}
+fun emitHtml(html: String): MimeTypedResult = HTML(html)
 
 /**
  * Render a BufferedImage as an inline <img> with a data URL source and display it.
  */
-fun render(img: BufferedImage, configure: DisplayOptions.() -> Unit = {}) {
+fun render(img: BufferedImage, configure: DisplayOptions.() -> Unit = {}): MimeTypedResult {
     val opts = DisplayOptions().apply(configure)
     checkJvm11()
     val t0 = System.nanoTime()
     val (html, meta) = buildImgTagWithMeta(img, opts)
-    emitHtml(html)
+    val result = emitHtml(html)
     val t1 = System.nanoTime()
     if (opts.measureTime) {
         val ms = (t1 - t0) / 1_000_000.0
         println("[DEBUG_LOG] Image encode+render: ${"%.2f".format(ms)} ms (" +
                 "${meta.origW}x${meta.origH} -> ${meta.outW}x${meta.outH}, cacheHit=${meta.cacheHit})")
     }
+    return result
 }
 
 /**
@@ -211,7 +215,7 @@ fun mimeImage(image: Any, format: String = "png"): Any {
  * Render multiple images in a responsive grid using CSS flex layout.
  * Images inherit the same options and are rendered as individual <img> tags.
  */
-fun renderGrid(images: List<BufferedImage>, configure: DisplayOptions.() -> Unit = {}):Any {
+fun renderGrid(images: List<BufferedImage>, configure: DisplayOptions.() -> Unit = {}): MimeTypedResult {
     if (images.isEmpty()) {
         return emitHtml("<div></div>")
     }
