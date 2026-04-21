@@ -23,6 +23,16 @@ val skainetSources by configurations.creating {
     }
 }
 
+// SKaiNET 0.19.0 shipped with a broken POM for skainet-backend-cpu-jvm: it
+// declares a runtime dependency on sk.ainet:skainet-backend-api-jvm:unspecified
+// (wrong group coordinate, bogus version) that is not published anywhere. The
+// backend-api module only re-exports interfaces already in skainet-lang-core,
+// which we depend on directly, so excluding the bogus coordinate is safe.
+configurations.configureEach {
+    exclude(group = "sk.ainet", module = "skainet-backend-api")
+    exclude(group = "sk.ainet", module = "skainet-backend-api-jvm")
+}
+
 dependencies {
     implementation(libs.skainet.lang.core)
     implementation(libs.skainet.lang.models)
@@ -58,6 +68,10 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+}
+
+tasks.processJupyterApiResources {
+    libraryProducers = listOf("sk.ainet.app.notebook.integration.SKaiNETJupyterIntegration")
 }
 
 kotlin {
@@ -101,7 +115,7 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-compile-core-jvm"))
         include(dependency("sk.ainet.core:skainet-backend-cpu-jvm"))
         include(dependency("sk.ainet.core:skainet-data-api-jvm"))
-        include(dependency("sk.ainet.core:skainet-data-simple-jvm"))
+        include(dependency("sk.ainet.core:skainet-data-basic-jvm"))
         include(dependency("sk.ainet.core:skainet-io-core-jvm"))
         include(dependency("sk.ainet.core:skainet-io-gguf-jvm"))
         include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))

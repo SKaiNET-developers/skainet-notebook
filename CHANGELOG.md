@@ -6,6 +6,24 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.19.0] - 2026-04-21
+
+### Added
+- `SKaiNETJupyterIntegration` — a `JupyterIntegration` subclass discovered automatically by the Kotlin Jupyter kernel. When the notebook jar is on the classpath, the integration pre-imports the hot SKaiNET packages (`sk.ainet.context.*`, `sk.ainet.lang.nn.*`, `sk.ainet.lang.tensor.*`, `sk.ainet.lang.tensor.dsl.*`, `sk.ainet.lang.types.*`, …) and registers renderers for `Tensor<*, *>` (HTML `<pre>` via `pprint`) and `java.awt.image.BufferedImage` (PNG mime). Closes the `import` boilerplate that every notebook cell previously had to repeat. (#43)
+- Expanded `NotebookAliases.kt` with short typealiases for the dtype markers (`FP16`/`FP32`/`FP64`/`Int4`/`Int8`/`Int16`/`Int32`/`Int64`/`UInt8`/`UInt16`/`UInt32`/`UInt64`), `DType`, `Module<T, V>`, and a `Net<T, V>` shorthand for the neural-network DSL. (#43)
+- `SKaiNETJupyterIntegrationTest` — verifies the integration class instantiates and that the Gradle plugin generates `META-INF/kotlin-jupyter-libraries/libraries.json` pointing at the producer FQN.
+
+### Changed
+- Updated SKaiNET libraries to version 0.19.0.
+- `emitHtml(html)` in `display/ImageRender.kt` now returns `MimeTypedResult` (via the Kotlin-Jupyter `HTML()` helper) instead of a raw `String`, and `render(image, ...)` returns that result — cells that end with `render(...)` / `renderGrid(...)` now actually display HTML in the notebook. Updated `ImageRenderTest` and `SuccessMetricsTest` to assert on the returned mime bundle rather than captured stdout.
+
+### Removed
+- Dropped `skainet-lang-kan` dependency (module removed upstream in mainline SKaiNET).
+- Dropped `skainet-apps-kllama` dependency (moved to the standalone `SKaiNET-transformers` repository).
+
+### Fixed
+- `shadowJar` include for data-simple now uses the correct published artifact coordinate `skainet-data-basic-jvm` (was `skainet-data-simple-jvm`, which never matched).
+
 ## [0.11.0] - 2026-02-08
 
 ### Changed

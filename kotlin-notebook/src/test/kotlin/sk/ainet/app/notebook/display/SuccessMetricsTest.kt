@@ -57,36 +57,35 @@ class SuccessMetricsTest {
 
     @Test
     fun oneLiners_work_for_supported_inputs() {
-        val out = ByteArrayOutputStream()
-        val prev = System.out
+        val results = mutableListOf<Any>()
+
+        // 1-liner for BufferedImage
+        results += display(img())
+
+        // 1-liner for ByteArray
+        val pngBytes = ByteArrayOutputStream().also { ImageIO.write(img(), "png", it) }.toByteArray()
+        results += display(pngBytes)
+
+        // 1-liner for String path
+        val tmp = Files.createTempFile("success-metrics", ".png")
         try {
-            System.setOut(java.io.PrintStream(out, true, Charsets.UTF_8))
+            ImageIO.write(img(), "png", tmp.toFile())
+            results += display(tmp.toString())
+        } finally { Files.deleteIfExists(tmp) }
 
-            // 1-liner for BufferedImage
-            display(img())
+        // 1-liner for URL
+        val port = server?.address?.port ?: error("server not started")
+        results += display(URL("http://127.0.0.1:$port/img"))
 
-            // 1-liner for ByteArray
-            val pngBytes = ByteArrayOutputStream().also { ImageIO.write(img(), "png", it) }.toByteArray()
-            display(pngBytes)
-
-            // 1-liner for String path
-            val tmp = Files.createTempFile("success-metrics", ".png")
-            try {
-                ImageIO.write(img(), "png", tmp.toFile())
-                display(tmp.toString())
-            } finally { Files.deleteIfExists(tmp) }
-
-            // 1-liner for URL
-            val port = server?.address?.port ?: error("server not started")
-            display(URL("http://127.0.0.1:$port/img"))
-        } finally {
-            System.setOut(prev)
+        // Every display() call must produce an HTML mime entry containing an inline <img> data URL
+        results.forEachIndexed { idx, result ->
+            val mime = result as? org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
+                ?: error("display() #$idx returned ${result::class.simpleName} instead of MimeTypedResult")
+            val html = mime[org.jetbrains.kotlinx.jupyter.api.MimeTypes.HTML]
+                ?: error("display() #$idx has no HTML mime entry, keys=${mime.keys}")
+            assertContains(html, "<img ")
+            assertContains(html, "src=\"data:image/png;base64,")
         }
-
-        val html = out.toString(Charsets.UTF_8)
-        // All display calls should have emitted inline <img> HTML at least once
-        assertContains(html, "<img ")
-        assertContains(html, "src=\"data:image/png;base64,")
     }
 
     @Test

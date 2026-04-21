@@ -123,23 +123,16 @@ class ImageRenderTest {
     @Test
     fun render_emits_expected_html() {
         val img = makeTestImage(10, 10)
-        val out = ByteArrayOutputStream()
-        val prev = System.out
-        try {
-            System.setOut(java.io.PrintStream(out, true, Charsets.UTF_8))
-            render(img) {
-                width = 100
-                height = 80
-                alt = "<tag> & sample"
-                border = true
-                cssClass = "thumb"
-            }
-        } finally {
-            System.setOut(prev)
+        val result = render(img) {
+            width = 100
+            height = 80
+            alt = "<tag> & sample"
+            border = true
+            cssClass = "thumb"
         }
 
-        val html = out.toString(Charsets.UTF_8)
-        // Basic structure and attributes
+        val html = result[org.jetbrains.kotlinx.jupyter.api.MimeTypes.HTML]
+            ?: error("render() should produce an HTML mime entry, got keys=${result.keys}")
         assertContains(html, "<img ")
         assertContains(html, "width=\"100\"")
         assertContains(html, "height=\"80\"")
@@ -152,17 +145,11 @@ class ImageRenderTest {
     @Test
     fun renderGrid_wraps_images_in_flex_container() {
         val imgs = listOf(makeTestImage(4, 4), makeTestImage(5, 5))
-        val out = ByteArrayOutputStream()
-        val prev = System.out
-        try {
-            System.setOut(java.io.PrintStream(out, true, Charsets.UTF_8))
-            renderGrid(imgs) {
-                width = 50
-            }
-        } finally {
-            System.setOut(prev)
-        }
-        val html = out.toString(Charsets.UTF_8)
+        val result = renderGrid(imgs) {
+            width = 50
+        } as org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
+        val html = result[org.jetbrains.kotlinx.jupyter.api.MimeTypes.HTML]
+            ?: error("renderGrid() should produce an HTML mime entry, got keys=${result.keys}")
         assertContains(html, "<div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;\">")
         // two image tags present with width attribute
         assertTrue(Regex("<img ").findAll(html).count() >= 2)

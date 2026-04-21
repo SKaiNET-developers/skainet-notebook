@@ -9,6 +9,7 @@ import java.nio.file.Files
 import java.nio.file.Path
 import java.util.Base64
 import javax.imageio.ImageIO
+import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
 
 /**
@@ -151,30 +152,28 @@ fun display(images: List<Any>, configure: DisplayOptions.() -> Unit = {}):Any {
 }
 
 /**
- * Emit raw HTML to the Kotlin Notebook output area, if the rich HTML API is present.
- * Falls back to println when executed outside of a notebook environment.
+ * Wrap raw HTML in a Jupyter [MimeTypedResult] so returning it from a notebook
+ * cell renders as HTML rather than as an escaped string.
  */
-fun emitHtml(html: String): Any {
-    // Return a simple value to keep API stable outside notebooks
-    // We intentionally avoid constructing MimeTypedResult here to keep behavior deterministic in tests
-    return html
-}
+fun emitHtml(html: String): MimeTypedResult = HTML(html)
 
 /**
- * Render a BufferedImage as an inline <img> with a data URL source and display it.
+ * Render a BufferedImage as an inline <img> with a data URL source. Returns a
+ * [MimeTypedResult] that Jupyter displays as HTML.
  */
-fun render(img: BufferedImage, configure: DisplayOptions.() -> Unit = {}) {
+fun render(img: BufferedImage, configure: DisplayOptions.() -> Unit = {}): MimeTypedResult {
     val opts = DisplayOptions().apply(configure)
     checkJvm11()
     val t0 = System.nanoTime()
     val (html, meta) = buildImgTagWithMeta(img, opts)
-    emitHtml(html)
+    val result = emitHtml(html)
     val t1 = System.nanoTime()
     if (opts.measureTime) {
         val ms = (t1 - t0) / 1_000_000.0
         println("[DEBUG_LOG] Image encode+render: ${"%.2f".format(ms)} ms (" +
                 "${meta.origW}x${meta.origH} -> ${meta.outW}x${meta.outH}, cacheHit=${meta.cacheHit})")
     }
+    return result
 }
 
 /**
