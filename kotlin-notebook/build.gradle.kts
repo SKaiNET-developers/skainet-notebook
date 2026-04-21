@@ -27,7 +27,6 @@ dependencies {
     implementation(libs.skainet.lang.core)
     implementation(libs.skainet.lang.models)
     implementation(libs.skainet.model.yolo)
-    implementation(libs.skainet.lang.kan)
     implementation(libs.skainet.lang.dag)
     implementation(libs.skainet.compile.core)
     implementation(libs.skainet.compile.dag)
@@ -37,14 +36,12 @@ dependencies {
     implementation(libs.skainet.io.core)
     implementation(libs.skainet.io.gguf)
     implementation(libs.skainet.io.onnx)
-    implementation(libs.skainet.app.kllama)
 
 
 
     // Resolve sources for SKaiNET libraries to package into our -sources.jar
     add("skainetSources", libs.skainet.lang.core)
     add("skainetSources", libs.skainet.lang.models)
-    add("skainetSources", libs.skainet.lang.kan)
     add("skainetSources", libs.skainet.lang.dag)
     add("skainetSources", libs.skainet.compile.core)
     add("skainetSources", libs.skainet.compile.dag)
@@ -55,7 +52,6 @@ dependencies {
     add("skainetSources", libs.skainet.io.core)
     add("skainetSources", libs.skainet.io.gguf)
     add("skainetSources", libs.skainet.io.onnx)
-    add("skainetSources", libs.skainet.app.kllama)
 
     testImplementation(kotlin("test"))
 }
@@ -95,7 +91,6 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-lang-core-jvm"))
         include(dependency("sk.ainet.core:skainet-lang-models-jvm"))
         include(dependency("sk.ainet.core:skainet-model-yolo-jvm"))
-        include(dependency("sk.ainet.core:skainet-lang-kan-jvm"))
         include(dependency("sk.ainet.core:skainet-lang-dag"))
         include(dependency("sk.ainet.core:skainet-lang-dag-jvm"))
         include(dependency("sk.ainet.core:skainet-compile-core"))
@@ -110,6 +105,5 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-io-core-jvm"))
         include(dependency("sk.ainet.core:skainet-io-gguf-jvm"))
         include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))
-        include(dependency("sk.ainet.core:skainet-apps-kllama-jvm"))
     }
 }
