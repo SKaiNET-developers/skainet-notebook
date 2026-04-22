@@ -6,6 +6,11 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.19.2] - 2026-04-22
+
+### Fixed
+- Publish the shadow uber-jar as the main artifact and strip all runtime dependencies from the generated POM. Previously the thin wrapper jar was published alongside a POM that listed `sk.ainet.core:skainet-backend-cpu-jvm` as a runtime dependency; that module's upstream POM references the unpublished `sk.ainet:skainet-backend-api-jvm:unspecified` coordinate, so consumers using Kotlin Jupyter's `@file:DependsOn("sk.ainet.app:kotlin-notebook:...")` transitively failed to resolve the CPU backend and hit `NoClassDefFoundError: sk/ainet/context/DirectCpuExecutionContext` at runtime. The uber-jar already bundles every SKaiNET module it needs, so the published POM now has no `<dependencies>` block and transitive resolution is sidestepped entirely.
+
 ## [0.19.1] - 2026-04-21
 
 ### Changed

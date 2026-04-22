@@ -121,3 +121,30 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))
     }
 }
+
+// Publish the shadow uber-jar as the main artifact and drop all
+// runtime deps from the POM. Upstream skainet-backend-cpu-jvm at
+// 0.19.x has a broken POM (references sk.ainet:skainet-backend-api-jvm:unspecified),
+// so consumers using @file:DependsOn in Kotlin Jupyter would fail to
+// resolve it and end up with a classpath missing DirectCpuExecutionContext.
+// Bundling everything in the uber-jar and emitting an empty <dependencies>
+// block bypasses transitive resolution entirely.
+tasks.named<Jar>("jar") {
+    enabled = false
+}
+
+afterEvaluate {
+    publishing.publications.withType<MavenPublication>().configureEach {
+        artifacts.toList()
+            .filter { it.classifier.isNullOrEmpty() && it.extension == "jar" }
+            .forEach { artifacts.remove(it) }
+        artifact(tasks.shadowJar) { classifier = "" }
+
+        pom.withXml {
+            val root = asNode()
+            (root.get("dependencies") as? groovy.util.NodeList)
+                ?.toList()
+                ?.forEach { root.remove(it as groovy.util.Node) }
+        }
+    }
+}
