@@ -1,7 +1,7 @@
 [versions]
 kotlin = "2.3.21"
 shadow = "9.3.1"
-skainet = "0.19.1"
+skainet = "0.20.0"
 dokka = "2.1.0"
 kotlinJupyter = "0.16.0-736"
 
