@@ -185,9 +185,7 @@ public fun <T : DType, V> Tensor<T, V>.toImage(memoryLayout: Layout = Layout.HWC
             val b: Int
             val a: Int
             if (channels == 1) {
-                //val u = b.toInt() and 0xFF
-                //colors[i] = u / 255f
-                val v = toByte(valueToFloat(indexer(y, x, 0)) / 255f)
+                val v = toByte(valueToFloat(indexer(y, x, 0)))
                 r = v; g = v; b = v; a = 255
             } else if (channels >= 3) {
                 r = toByte(valueToFloat(indexer(y, x, 0)))
