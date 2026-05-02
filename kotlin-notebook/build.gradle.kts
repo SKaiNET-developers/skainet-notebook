@@ -58,6 +58,12 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // SKaiNET's CPU backend uses the JDK Vector API (jdk.incubator.vector) for
+    // SIMD-accelerated kernels. The module is not in the default module graph,
+    // so without --add-modules the runtime probe in NotebookInfoTest would
+    // always see "Vector API not available" and we'd never exercise the
+    // active-path branch.
+    jvmArgs("--add-modules", "jdk.incubator.vector")
 }
 
 tasks.processJupyterApiResources {

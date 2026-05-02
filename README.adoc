@@ -70,3 +70,52 @@ import sk.ainet.app.notebook.tools.toImage
 
 imageTensor.toImage(Layout.CHW)
 ----
+
+== Enabling SIMD
+
+SKaiNET's CPU backend uses the JDK Vector API (`jdk.incubator.vector`) for SIMD-accelerated matmul, quantized kernels (Q4_K, Q6_K, Q8_0, TurboQuant), and elementwise/reduction ops. The Vector API is an incubator module — it is shipped with the JDK but *not* in the default module graph, so the kernel JVM has to be started with `--add-modules jdk.incubator.vector` for SKaiNET to install the SIMD kernels. Without that flag, SKaiNET silently falls back to scalar `DefaultCpuOps`.
+
+When the notebook integration loads, it runs the same probe SKaiNET's CPU backend uses and renders a yellow warning if the SIMD path is unreachable. You can also call `checkSimd()` from any cell:
+
+[source, Kotlin]
+----
+checkSimd()
+// SimdReport(jdkFeatureVersion=21, jdkOk=true, vectorApiAvailable=true,
+//            configEnabled=true, simdActive=true, reason=Vector API kernels active)
+----
+
+The first `DirectCpuExecutionContext.create()` call also prints one of:
+
+----
+[SKaiNET] Using SIMD-accelerated CPU operations (Vector API)
+[SKaiNET] Using standard CPU operations (Vector API not available)
+----
+
+=== IntelliJ Kotlin Notebook
+
+Settings → *Languages & Frameworks* → *Kotlin* → *Kotlin Notebook* → *JVM options for Kotlin Notebook*, add:
+
+----
+--add-modules jdk.incubator.vector
+----
+
+Restart the kernel (toolbar → kernel menu → *Restart Kernel*).
+
+=== Plain Jupyter with the Kotlin kernel
+
+Either set the env var before launching Jupyter:
+
+[source, shell]
+----
+export KOTLIN_JUPYTER_JAVA_OPTS="--add-modules=jdk.incubator.vector"
+jupyter notebook
+----
+
+…or edit the kernel descriptor (`jupyter kernelspec list` to find the `kotlin` entry's directory, open its `kernel.json`, and add `"--add-modules", "jdk.incubator.vector"` to the `argv` array before `-jar`).
+
+=== Disabling SIMD
+
+If you need to compare against the scalar path (e.g. for a benchmark or to triage a numerical regression) set either:
+
+* JVM property: `-Dskainet.cpu.vector.enabled=false`
+* Environment variable: `SKAINET_CPU_VECTOR_ENABLED=false`

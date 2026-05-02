@@ -4,6 +4,7 @@ import org.jetbrains.kotlinx.jupyter.api.HTML
 import org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration
 import sk.ainet.app.notebook.NotebookInfo
+import sk.ainet.app.notebook.checkSimd
 import sk.ainet.app.notebook.display.toBase64
 import sk.ainet.lang.tensor.Tensor
 import sk.ainet.lang.tensor.pprint
@@ -55,8 +56,23 @@ class SKaiNETJupyterIntegration : JupyterIntegration() {
 
         onLoaded {
             display(HTML("<i>${NotebookInfo.NAME} v${NotebookInfo.VERSION} ready</i>"), null)
+            val simd = checkSimd()
+            if (!simd.simdActive) {
+                display(HTML(simdWarningHtml(simd.reason)), null)
+            }
         }
     }
+
+    // Visible at notebook load when SIMD is unreachable. Distinct color band
+    // so it doesn't read like an error — the kernel still works on the scalar
+    // fallback, it's just slower for matmul-heavy code.
+    private fun simdWarningHtml(reason: String): String =
+        """<div style="border-left:3px solid #d97706;padding:8px 12px;margin-top:6px;background:#fef3c7;color:#78350f;font-family:sans-serif">
+            ⚠ <b>SKaiNET SIMD path is NOT active</b> — falling back to scalar CPU kernels.<br>
+            <span style="font-size:90%">${escape(reason)}<br>
+            IntelliJ Kotlin Notebook: Settings → Languages &amp; Frameworks → Kotlin → Kotlin Notebook → JVM options, add <code>--add-modules jdk.incubator.vector</code>.<br>
+            Run <code>checkSimd()</code> for the full diagnostic.</span>
+        </div>"""
 
     private fun escape(s: String): String = buildString(s.length) {
         for (ch in s) when (ch) {

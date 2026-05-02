@@ -8,9 +8,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [0.22.1] - 2026-05-02
 
+### Added
+- `checkSimd()` (top-level in `sk.ainet.app.notebook`, also exposed as `NotebookInfo.checkSimd()`) returns a `SimdReport` capturing whether SKaiNET's Vector-API CPU kernels are reachable from the current JVM. Mirrors the three preconditions SKaiNET's `PlatformCpuOpsFactory` checks at startup — JDK ≥ 21, `jdk.incubator.vector` module loaded, and the `skainet.cpu.vector.enabled` / `SKAINET_CPU_VECTOR_ENABLED` kill-switch — so notebook authors can assert the fast path before running benchmarks.
+- `SKaiNETJupyterIntegration` now calls `checkSimd()` in `onLoaded` and renders an inline yellow warning when SIMD is unreachable. Previously the scalar fallback was completely silent — users running the SKaiNET banner saw "ready" while the kernel quietly served scalar matmul. The warning names the missing precondition and points at the IntelliJ JVM-options setting.
+- New "Enabling SIMD" section in `README.adoc` documenting the `--add-modules jdk.incubator.vector` requirement for both IntelliJ Kotlin Notebook and plain Jupyter, plus the `checkSimd()` cell-side probe and the `skainet.cpu.vector.enabled` kill-switch.
+
 ### Changed
 - Updated SKaiNET libraries to version 0.22.1 (was 0.19.1 in the build, 0.19.2 in the published artifact). Picks up the 0.20.0 Q4_K / Q6_K native CPU matmul (lazy shape-swap transpose + SIMD kernels) and StableHLO lowerings for `scaledDotProductAttention`, plus the 0.21.x / 0.22.x release line on top.
 - Bumped `NotebookInfo.VERSION` to `0.22.1` so `info()` and the Jupyter integration banner report the actual notebook version (was stuck at the stale `0.19.0` constant the previous two releases forgot to bump).
+- `tasks.test` now starts the test JVM with `--add-modules jdk.incubator.vector` so `NotebookInfoTest` can pin the active-SIMD branch of `checkSimd()` instead of always exercising the fallback.
 
 ### Removed
 - Dropped the `configurations.configureEach { exclude(group = "sk.ainet", module = "skainet-backend-api*") }` workaround that 0.19.2 needed. Upstream fixed the broken `skainet-backend-cpu-jvm` POM in 0.19.1 (correct `sk.ainet.core` group, real version), so the exclusion is no longer needed and was actively harmful — `skainet-backend-api-jvm` is a legitimate runtime dep of the CPU backend.
