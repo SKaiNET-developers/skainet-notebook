@@ -23,16 +23,6 @@ val skainetSources by configurations.creating {
     }
 }
 
-// SKaiNET 0.19.0 shipped with a broken POM for skainet-backend-cpu-jvm: it
-// declares a runtime dependency on sk.ainet:skainet-backend-api-jvm:unspecified
-// (wrong group coordinate, bogus version) that is not published anywhere. The
-// backend-api module only re-exports interfaces already in skainet-lang-core,
-// which we depend on directly, so excluding the bogus coordinate is safe.
-configurations.configureEach {
-    exclude(group = "sk.ainet", module = "skainet-backend-api")
-    exclude(group = "sk.ainet", module = "skainet-backend-api-jvm")
-}
-
 dependencies {
     implementation(libs.skainet.lang.core)
     implementation(libs.skainet.lang.models)
@@ -68,6 +58,12 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // SKaiNET's CPU backend uses the JDK Vector API (jdk.incubator.vector) for
+    // SIMD-accelerated kernels. The module is not in the default module graph,
+    // so without --add-modules the runtime probe in NotebookInfoTest would
+    // always see "Vector API not available" and we'd never exercise the
+    // active-path branch.
+    jvmArgs("--add-modules", "jdk.incubator.vector")
 }
 
 tasks.processJupyterApiResources {
@@ -114,6 +110,8 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-backend-cpu"))
         include(dependency("sk.ainet.core:skainet-compile-core-jvm"))
         include(dependency("sk.ainet.core:skainet-backend-cpu-jvm"))
+        include(dependency("sk.ainet.core:skainet-backend-api-jvm"))
+        include(dependency("sk.ainet.core:skainet-lang-ksp-annotations-jvm"))
         include(dependency("sk.ainet.core:skainet-data-api-jvm"))
         include(dependency("sk.ainet.core:skainet-data-basic-jvm"))
         include(dependency("sk.ainet.core:skainet-io-core-jvm"))
@@ -122,13 +120,12 @@ tasks.shadowJar {
     }
 }
 
-// Publish the shadow uber-jar as the main artifact and drop all
-// runtime deps from the POM. Upstream skainet-backend-cpu-jvm at
-// 0.19.x has a broken POM (references sk.ainet:skainet-backend-api-jvm:unspecified),
-// so consumers using @file:DependsOn in Kotlin Jupyter would fail to
-// resolve it and end up with a classpath missing DirectCpuExecutionContext.
-// Bundling everything in the uber-jar and emitting an empty <dependencies>
-// block bypasses transitive resolution entirely.
+// Publish the shadow uber-jar as the main artifact and drop all runtime deps
+// from the POM. Kotlin Jupyter's `@file:DependsOn` resolves transitively from
+// the published POM, so a single self-contained jar with an empty
+// <dependencies> block is the most reliable distribution shape for notebook
+// consumers and sidesteps any future POM-coordinate breakage in upstream
+// SKaiNET modules.
 tasks.named<Jar>("jar") {
     enabled = false
 }
