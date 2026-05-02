@@ -38,12 +38,44 @@ You can create Kotlin notebooks directly in IntelliJ IDEA using one of these met
 
 == SKaiNET notebook dependency
 
-Use SKaiNET directly in a Kotlin Notebook via Maven Central.
+There are two ways to pull SKaiNET into a Kotlin Notebook cell. Pick whichever fits your kernel — both load the same uber-jar and run the same `SKaiNETJupyterIntegration` (default imports, tensor / image renderers, ready banner, SIMD-availability check).
+
+=== Via `%use` magic (registry-driven)
+
+Once `skainet-notebook.json` lands in the https://github.com/Kotlin/kotlin-jupyter-libraries[Kotlin Jupyter library registry], a single line is enough — the kernel resolves the artifact coordinate and version pin from the registry and the in-classpath integration takes over from there:
+
+[source, Kotlin]
+----
+%use skainet-notebook
+----
+
+Pin a specific version (otherwise the registry's `properties.v` wins):
+
+[source, Kotlin]
+----
+%use skainet-notebook(0.22.1)
+%use skainet-notebook@0.22.1
+----
+
+Combine with other registry libraries in the usual comma-separated form:
+
+[source, Kotlin]
+----
+%use skainet-notebook, dataframe, lets-plot
+----
+
+NOTE: JVM startup arguments (notably `--add-modules jdk.incubator.vector`, see <<enabling-simd>>) cannot be set from a registry descriptor — they have to be configured on the kernel itself. The integration will still load on a vanilla kernel; it will just emit the SIMD-not-active warning and run the scalar CPU path.
+
+=== Via `@file:DependsOn` (explicit coordinate)
+
+When you need to pin against a specific Maven coordinate without depending on the registry (offline kernels, internal mirrors, locked-down environments):
 
 [source]
 ----
 @file:DependsOn("sk.ainet.app:kotlin-notebook:0.22.1")
 ----
+
+In either case the first cell that needs SKaiNET looks the same:
 
 .code
 [source, Kotlin]
@@ -71,6 +103,7 @@ import sk.ainet.app.notebook.tools.toImage
 imageTensor.toImage(Layout.CHW)
 ----
 
+[#enabling-simd]
 == Enabling SIMD
 
 SKaiNET's CPU backend uses the JDK Vector API (`jdk.incubator.vector`) for SIMD-accelerated matmul, quantized kernels (Q4_K, Q6_K, Q8_0, TurboQuant), and elementwise/reduction ops. The Vector API is an incubator module — it is shipped with the JDK but *not* in the default module graph, so the kernel JVM has to be started with `--add-modules jdk.incubator.vector` for SKaiNET to install the SIMD kernels. Without that flag, SKaiNET silently falls back to scalar `DefaultCpuOps`.

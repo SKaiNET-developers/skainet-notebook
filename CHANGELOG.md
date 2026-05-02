@@ -6,6 +6,9 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+### Added
+- README "SKaiNET notebook dependency" section now documents the `%use skainet-notebook` magic alongside the existing `@file:DependsOn` form, including version-pin variants (`%use skainet-notebook(0.22.1)`, `@0.22.1`) and a callout that JVM startup args (e.g. `--add-modules jdk.incubator.vector`) still have to be set on the kernel — the registry descriptor cannot inject them. Companion descriptor `skainet-notebook.json` is staged for submission to https://github.com/Kotlin/kotlin-jupyter-libraries; once merged it makes `%use skainet-notebook` work out of the box from any Kotlin Jupyter kernel.
+
 ## [0.22.1] - 2026-05-02
 
 ### Added
