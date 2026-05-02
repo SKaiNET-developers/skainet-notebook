@@ -6,6 +6,19 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.22.1] - 2026-05-02
+
+### Changed
+- Updated SKaiNET libraries to version 0.22.1 (was 0.19.1 in the build, 0.19.2 in the published artifact). Picks up the 0.20.0 Q4_K / Q6_K native CPU matmul (lazy shape-swap transpose + SIMD kernels) and StableHLO lowerings for `scaledDotProductAttention`, plus the 0.21.x / 0.22.x release line on top.
+- Bumped `NotebookInfo.VERSION` to `0.22.1` so `info()` and the Jupyter integration banner report the actual notebook version (was stuck at the stale `0.19.0` constant the previous two releases forgot to bump).
+
+### Removed
+- Dropped the `configurations.configureEach { exclude(group = "sk.ainet", module = "skainet-backend-api*") }` workaround that 0.19.2 needed. Upstream fixed the broken `skainet-backend-cpu-jvm` POM in 0.19.1 (correct `sk.ainet.core` group, real version), so the exclusion is no longer needed and was actively harmful — `skainet-backend-api-jvm` is a legitimate runtime dep of the CPU backend.
+
+### Fixed
+- `shadowJar` now bundles `skainet-backend-api-jvm` and `skainet-lang-ksp-annotations-jvm`, the two newly-published transitive deps of `skainet-backend-cpu-jvm` in 0.22.1. Without them the published uber-jar would still load the CPU context but trip `NoClassDefFoundError` on the first call into anything that touches the backend-API surface.
+- `Tensor.toImage(Layout.HW | Layout.CHW)` for single-channel images: the grayscale branch was dividing the source value by 255 before the `multiply255` heuristic ran, so both code paths through `toByte` collapsed to zero — a tensor of constant `128f` rendered as solid black, and the same for `Int8` `200`. The grayscale branch now mirrors the RGB branch and lets the heuristic decide whether to scale, so MNIST-style 0..255 grayscale and FP32 normalized 0..1 inputs both render with the expected intensity. Pinned by the previously-failing `ImageUtilsTest.toImage_HW_grayscale_supported` and `toImage_CHW_grayscale_Int8_Byte_is_treated_as_unsigned` cases.
+
 ## [0.19.2] - 2026-04-22
 
 ### Fixed

@@ -42,7 +42,7 @@ Use SKaiNET directly in a Kotlin Notebook via Maven Central.
 
 [source]
 ----
-@file:DependsOn("sk.ainet.app:kotlin-notebook:0.19.2")
+@file:DependsOn("sk.ainet.app:kotlin-notebook:0.22.1")
 ----
 
 .code
