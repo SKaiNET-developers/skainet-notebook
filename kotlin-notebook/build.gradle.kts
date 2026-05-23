@@ -126,9 +126,22 @@ tasks.shadowJar {
         // Bundle the wasm runtime so notebook consumers resolving the
         // published kotlin-notebook jar via @file:DependsOn don't need any
         // additional repositories. The POM is rewritten to drop runtime deps,
-        // so chasm + weh have to live inside the shaded artifact.
+        // so chasm + weh AND THEIR TRANSITIVES have to live inside the shaded
+        // artifact — at runtime the kernel resolves via POM only, so any
+        // transitive that isn't shaded here surfaces as a NoClassDefFoundError
+        // on first cell that touches the wasm path.
         include(dependency("io.github.charlietap.chasm:.*"))
         include(dependency("at.released.weh:.*"))
+        // kotlin-result — chasm uses Result for its ChasmResult/Success/Error.
+        // Missing this caused `NoClassDefFoundError: com/github/michaelbull/result/BindException`
+        // in cells that exercised GraphvizWasm.
+        include(dependency("com.michael-bull.kotlin-result:.*"))
+        // arrow-core — used internally by chasm + weh for typed errors.
+        include(dependency("io.arrow-kt:.*"))
+        // kotlinx-io — chasm decoder reads wasm via SourceReader.
+        include(dependency("org.jetbrains.kotlinx:kotlinx-io-.*"))
+        // pbandk — weh's protocol-buffer encoded message types.
+        include(dependency("pro.streem.pbandk:.*"))
     }
 }
 
