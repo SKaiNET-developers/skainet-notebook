@@ -1,21 +1,13 @@
 package sk.ainet.app.notebook.display
 
+import javax.xml.parsers.DocumentBuilderFactory
 import kotlin.test.Test
 import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertTrue
+import org.jetbrains.kotlinx.jupyter.api.MimeTypes
 
-/**
- * Contract tests for the Graphviz cell renderer.
- *
- * The scaffold branch can't render real graphs yet — the wasm artifact lands
- * in the follow-up PR. These tests pin the *contract* (value-class shape,
- * extension functions, exception types) so the follow-up can swap in the real
- * renderer body without changing anything user-facing.
- *
- * Once the wasm is bundled, [renders_a_simple_graph] flips from
- * "throws GraphvizNotBundledException" to "returns SVG and asserts shape".
- */
 class DotRenderTest {
 
     @Test
@@ -51,38 +43,80 @@ class DotRenderTest {
     }
 
     @Test
-    fun renderDot_throws_GraphvizNotBundledException_until_wasm_is_bundled() {
-        // The whole point of the scaffold branch: the contract resolves, the
-        // call site compiles, the dependency wiring is real, but the wasm
-        // payload hasn't been built yet. This test flips polarity in the
-        // follow-up PR — at that point it asserts "returns SVG" instead of
-        // "throws". If you're reading this because the test failed, check
-        // whether you forgot to drop graphviz.wasm into resources/wasm/ or
-        // whether GraphvizWasm.kt still has TODO bodies.
-        val ex = assertFailsWith<GraphvizNotBundledException> {
-            renderDot(Dot("digraph G { A -> B }"))
+    fun renders_a_simple_graph_to_valid_svg() {
+        val result = renderDot(Dot("digraph G { A -> B }"))
+        val html = result[MimeTypes.HTML]
+            ?: error("renderDot should produce an HTML mime entry, got keys=${result.keys}")
+
+        // Cheap shape check first so a regression in the wrapper layer doesn't
+        // get obscured by a slow XML parse failure further down.
+        assertContains(html, "<svg")
+        assertContains(html, "</svg>")
+        // Node labels Graphviz emits — confirms the actual layout ran, not just
+        // a static placeholder.
+        assertContains(html, "A")
+        assertContains(html, "B")
+
+        // Round-trip through an XML parser to confirm the SVG is well-formed.
+        // We're checking the wasm produced valid output, not just any string.
+        val factory = DocumentBuilderFactory.newInstance().apply {
+            // Disable DTD loading; Graphviz's SVG references the SVG 1.1 DTD
+            // via DOCTYPE, but the JDK parser would try to fetch it from w3.org.
+            setFeature("http://apache.org/xml/features/disallow-doctype-decl", false)
+            setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false)
+            setFeature(
+                "http://xml.org/sax/features/external-general-entities",
+                false,
+            )
+            setFeature(
+                "http://xml.org/sax/features/external-parameter-entities",
+                false,
+            )
+            isNamespaceAware = true
         }
-        // The thrown message has to point readers at the follow-up so a fresh
-        // contributor stumbling on it knows what they're looking at.
-        assertContains(ex.message ?: "", "graphviz-wasm-followup")
+        val builder = factory.newDocumentBuilder()
+        // Strip the wrapper <div>...</div> if any; parse the SVG fragment from
+        // the first <svg ... > to the last </svg>.
+        val start = html.indexOf("<svg")
+        val end = html.lastIndexOf("</svg>") + "</svg>".length
+        val svg = html.substring(start, end)
+        val doc = builder.parse(svg.byteInputStream())
+        assertEquals("svg", doc.documentElement.localName)
     }
 
     @Test
-    fun renderDot_string_overload_throws_the_same_way() {
-        // Exercises that the convenience overload (`renderDot(String)`) is
-        // wired through the same path as `renderDot(Dot)` and not a separate
-        // shortcut that bypasses GraphvizWasm.
-        assertFailsWith<GraphvizNotBundledException> {
-            renderDot("digraph G { A }")
+    fun renderDot_string_overload_matches_dot_overload() {
+        val a = renderDot("digraph G { X -> Y }")
+        val b = renderDot(Dot("digraph G { X -> Y }"))
+        // Both should produce an SVG body; ids inside SVG (per-node coords)
+        // are deterministic for identical inputs at identical engine settings,
+        // so the bodies should match.
+        assertEquals(
+            a[MimeTypes.HTML]?.contains("<svg"),
+            b[MimeTypes.HTML]?.contains("<svg"),
+        )
+        assertTrue(a[MimeTypes.HTML]!!.contains("X"))
+        assertTrue(b[MimeTypes.HTML]!!.contains("Y"))
+    }
+
+    @Test
+    fun renderDot_throws_on_unsupported_engine() {
+        // The bundled wasm only links the `dot` + `core` plugins. Asking for
+        // any other engine should surface a clear, actionable error rather
+        // than producing a silently-wrong layout.
+        val ex = assertFailsWith<GraphvizException> {
+            renderDot(Dot("graph G { A -- B }")) {
+                engine = DotEngine.NEATO
+            }
         }
+        assertContains(ex.message ?: "", "NEATO")
+        assertEquals(DotEngine.NEATO, ex.engine)
     }
 
     @Test
     fun GraphvizException_carries_source_and_engine_for_debugging() {
-        // We don't throw this in the scaffold, but the type itself has to
-        // expose source + engine — otherwise notebook authors have to scrape
-        // kernel logs to figure out which cell failed. Pin the constructor
-        // shape so refactors can't quietly drop the fields.
+        // Constructor-shape pin so refactors can't quietly drop the fields
+        // notebook authors rely on for debugging.
         val ex = GraphvizException(
             message = "Layout failed",
             source = "digraph { A -> B -> A }",

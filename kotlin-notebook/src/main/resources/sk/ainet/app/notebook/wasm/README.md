@@ -1,66 +1,82 @@
 # `sk.ainet.app.notebook.wasm` — bundled wasm artifacts
 
-This directory is where the Graphviz WebAssembly binary lives at runtime. On
-the scaffold branch the binary is **not yet present** — `GraphvizWasm` throws
-`GraphvizNotBundledException` until something matching the path below appears
-in the shadow jar.
+This directory ships the Graphviz WebAssembly binary that `GraphvizWasm`
+executes on the JVM via [chasm](https://github.com/CharlieTap/chasm) to
+render DOT graphs in notebook cells. No JS, no CDN, no browser dependency.
 
-## Expected layout
+## Layout
 
 ```
 sk/ainet/app/notebook/wasm/
-├── README.md          # this file (shipped alongside the binary, harmless)
-└── graphviz.wasm      # the artifact loaded by GraphvizWasm.loadWasmBytes
+├── README.md          # this file
+└── graphviz.wasm      # the artifact loaded by GraphvizWasm
 ```
 
 `GraphvizWasm.kt` reads the binary as a classpath resource via
 `GraphvizWasm::class.java.getResourceAsStream("/sk/ainet/app/notebook/wasm/graphviz.wasm")`.
-Anything else in this directory (this README, future tokenizer mappings,
-etc.) is ignored by the renderer.
 
-## Expected exports
+## Provenance — interim artifact from Kraphviz
 
-The wasm module must export, at minimum:
+The `graphviz.wasm` currently checked in is sourced from
+[Yeicor/Kraphviz](https://github.com/Yeicor/Kraphviz), which compiles official
+Graphviz to wasm via Emscripten with a minimal C wrapper exposing
+`render_dot_svg(char *dot) -> char*` plus the standard `malloc` / `free`. The
+wrapper statically links the `dot` and `core` layout/render plugins via
+`lt_preloaded_symbols`, so the wasm has a tiny plain-C ABI (no Emscripten
+Embind runtime needed) and exactly 12 imports: 8 standard `wasi_snapshot_preview1.*`
+functions and 4 `env.__syscall_*` calls Graphviz never exercises on the
+render path. All 12 are wired in `GraphvizWasm.kt` as Kotlin host functions.
 
-| Export        | Signature (C view)                                    | Notes                                                          |
-| ------------- | ----------------------------------------------------- | -------------------------------------------------------------- |
-| `gv_render`   | `char* gv_render(const char* dot, size_t len, int engine)` | Returns a NUL-terminated UTF-8 SVG document, owned by the wasm |
-| `gv_free`     | `void gv_free(char* ptr)`                             | Frees a pointer previously returned by `gv_render`             |
-| `malloc`      | `void* malloc(size_t)`                                | For Kotlin-side input buffer allocation                        |
-| `free`        | `void free(void*)`                                    | Pairs with `malloc`                                            |
-| `memory`      | (the linear memory)                                   | Default export name is fine                                    |
+Kraphviz has no LICENSE file in the repository, so this artifact is
+**interim**. The reproducible build harness in `wasm-build/` (Docker +
+Emscripten + an `api.c` wrapper, modelled on Kraphviz's recipe) is the
+follow-up that produces our own artifact from official Graphviz source.
 
-The `engine` integer corresponds to `DotEngine.ordinal` (see
-`DotRender.kt`): 0 = DOT, 1 = NEATO, 2 = TWOPI, 3 = CIRCO, 4 = FDP,
-5 = OSAGE, 6 = PATCHWORK.
+When `wasm-build/` produces a working binary, it replaces this file and this
+README's "Provenance" section gets updated to point at the local build.
 
-## Expected imports
+## Exports the host expects
 
-Either:
+| Export             | Signature                                             | Notes                                                          |
+| ------------------ | ----------------------------------------------------- | -------------------------------------------------------------- |
+| `render_dot_svg`   | `char* render_dot_svg(char* dot)`                     | Returns a NUL-terminated UTF-8 SVG document, malloc'd in wasm  |
+| `malloc`           | `void* malloc(size_t)`                                | For Kotlin-side input buffer allocation                        |
+| `free`             | `void free(void*)`                                    | Pairs with `malloc`                                            |
+| `memory`           | (the linear memory)                                   |                                                                |
+| `viz_set_yinvert`  | `void viz_set_yinvert(int)`                           | Optional config; not currently called                          |
+| `viz_set_nop`      | `void viz_set_nop(int)`                               | Optional config; not currently called                          |
 
-- **WASI Preview 1 only** (the clean path) — `wasi_snapshot_preview1.fd_write`
-  for stderr diagnostics, `clock_time_get`, `random_get`, `proc_exit`. All
-  supplied by `at.released.weh:bindings-chasm-wasip1`, no manual shims needed.
-- **WASI P1 + Emscripten runtime ABI** (the hpcc-js path) —
-  `env.__syscall_*`, `env.emscripten_resize_heap`, `env.memory` initial size,
-  the indirect-function table. Supplied by
-  `at.released.weh:bindings-chasm-emscripten`; a handful of imports may still
-  need ad-hoc Kotlin shims, depending on the exact Emscripten flags hpcc-js
-  built with.
+## Imports the host supplies
 
-Whichever route the follow-up takes, `GraphvizWasm.instantiate` is where the
-wiring goes.
+`wasi_snapshot_preview1.*`: `clock_time_get`, `proc_exit`, `fd_write`,
+`fd_read`, `fd_close`, `fd_seek`, `environ_sizes_get`, `environ_get`.
 
-## How the binary is built
+`env.__syscall_*`: `__syscall_faccessat`, `__syscall_stat64`,
+`__syscall_newfstatat`, `__syscall_unlinkat`. Stubs returning `-ENOENT`;
+Kraphviz confirms these are never called during `render_dot_svg`.
 
-The reproducible build harness lives at `<repo-root>/wasm-build/`. From
-the project root:
+All host implementations are in `GraphvizWasm.kt`. Only `fd_write` and
+`environ_sizes_get` have non-trivial bodies (they read/write the wasm's
+linear memory via `chasm.embedding.memory.*`).
+
+## Engine support
+
+The bundled wasm only links the `dot` + `core` plugins. Requesting any other
+`DotEngine` from `renderDot` raises `GraphvizException` with a clear "engine
+not bundled" message. When `wasm-build/` produces our own artifact it will
+link `neato_layout` too.
+
+## Future-proofing — what to verify if the artifact changes
+
+The current `GraphvizWasm.kt` host-function list was derived by parsing the
+wasm's import section directly. If a rebuilt artifact adds or removes
+imports, instantiation will fail with a chasm error naming the offending
+import. To dump a fresh import list:
 
 ```sh
-make -C wasm-build image       # build the wasi-sdk Docker image (once)
-make -C wasm-build graphviz    # produce dist/graphviz.wasm
-cp wasm-build/dist/graphviz.wasm \
-   kotlin-notebook/src/main/resources/sk/ainet/app/notebook/wasm/
+uv run python -c "
+import sys
+data = open('graphviz.wasm','rb').read()
+# walk the wasm section table; see git history for the full parser.
+"
 ```
-
-See `wasm-build/README.md` for what's currently working and what's still TODO.

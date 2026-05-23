@@ -135,10 +135,7 @@ renderDot("graph G { A -- B -- C -- A }") {
 }
 ----
 
-[IMPORTANT]
-====
-This release ships the *public API surface and the runtime wiring* for the JVM-side path, but does not yet bundle the Graphviz wasm artifact. Calling `renderDot` currently throws `GraphvizNotBundledException` with a pointer to the follow-up work. Build instructions for the bundled binary live in `wasm-build/` at the repo root (`make image && make graphviz`); the in-source `kotlin-notebook/src/main/resources/sk/ainet/app/notebook/wasm/README.md` documents the expected exports and import set.
-====
+NOTE: Only the `dot` layout engine is bundled in the current release. Other engines (`neato`, `twopi`, ...) raise `GraphvizException` with a clear "not bundled" message; they'll be added when the reproducible build at `wasm-build/` produces an artifact linking the `neato_layout` plugin. The current `graphviz.wasm` is sourced from https://github.com/Yeicor/Kraphviz[Kraphviz] as an interim artifact — see `kotlin-notebook/src/main/resources/sk/ainet/app/notebook/wasm/README.md` for provenance.
 
 [#enabling-simd]
 == Enabling SIMD
