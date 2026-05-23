@@ -142,6 +142,22 @@ tasks.named<Jar>("jar") {
     enabled = false
 }
 
+// Gradle module metadata (`.module`) takes precedence over the POM for any
+// resolver that knows how to read it — including the Kotlin Jupyter kernel.
+// The default `.module` for this project lists apiElements/runtimeElements
+// variants whose `files[]` are empty (because `jar` is disabled above), and
+// the actual shadow jar lives only in a `shadowRuntimeElements` variant that
+// Kotlin Jupyter doesn't select. The consumer ends up downloading our
+// transitive deps without our main artifact — so imports like
+// `sk.ainet.app.notebook.display.*` fail to resolve in cell compilation.
+//
+// Disabling module metadata generation forces resolvers back to the POM,
+// which correctly points at the shadow jar (empty dependencies + a single
+// .jar artifact = exactly what we want for notebook consumers).
+tasks.withType<GenerateModuleMetadata>().configureEach {
+    enabled = false
+}
+
 afterEvaluate {
     publishing.publications.withType<MavenPublication>().configureEach {
         artifacts.toList()
