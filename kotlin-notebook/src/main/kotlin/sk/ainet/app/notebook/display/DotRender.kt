@@ -47,9 +47,15 @@ data class DotOptions(
  * ```
  *
  * Use [asDot] for terser call sites: `"digraph G { A -> B }".asDot()`.
+ *
+ * Note: deliberately a `data class` rather than `@JvmInline value class`.
+ * Kotlin Jupyter's `render<Dot>` hook dispatches via runtime type, and value
+ * classes get erased to their underlying type on the JVM — a value-class
+ * `Dot` would arrive at the renderer as a bare `String`, the renderer
+ * wouldn't match, and the cell would print the raw DOT source instead of the
+ * rendered SVG. A real JVM class makes the dispatch work.
  */
-@JvmInline
-value class Dot(val source: String)
+data class Dot(val source: String)
 
 /** Wrap a DOT string for the cell-result renderer. */
 fun String.asDot(): Dot = Dot(this)
