@@ -37,7 +37,12 @@ dependencies {
     implementation(libs.skainet.io.gguf)
     implementation(libs.skainet.io.onnx)
 
-
+    // JVM-side WebAssembly runtime for the Graphviz cell renderer. The bundled
+    // graphviz.wasm runs entirely on the kernel JVM via chasm; nothing in the
+    // notebook frontend executes JS to render a graph.
+    implementation(libs.chasm.runtime)
+    implementation(libs.weh.bindings.chasm.wasip1)
+    implementation(libs.weh.bindings.chasm.emscripten)
 
     // Resolve sources for SKaiNET libraries to package into our -sources.jar
     add("skainetSources", libs.skainet.lang.core)
@@ -117,6 +122,13 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-io-core-jvm"))
         include(dependency("sk.ainet.core:skainet-io-gguf-jvm"))
         include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))
+
+        // Bundle the wasm runtime so notebook consumers resolving the
+        // published kotlin-notebook jar via @file:DependsOn don't need any
+        // additional repositories. The POM is rewritten to drop runtime deps,
+        // so chasm + weh have to live inside the shaded artifact.
+        include(dependency("io.github.charlietap.chasm:.*"))
+        include(dependency("at.released.weh:.*"))
     }
 }
 

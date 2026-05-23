@@ -5,6 +5,8 @@ import org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
 import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration
 import sk.ainet.app.notebook.NotebookInfo
 import sk.ainet.app.notebook.checkSimd
+import sk.ainet.app.notebook.display.Dot
+import sk.ainet.app.notebook.display.renderDot
 import sk.ainet.app.notebook.display.toBase64
 import sk.ainet.lang.tensor.Tensor
 import sk.ainet.lang.tensor.pprint
@@ -53,6 +55,10 @@ class SKaiNETJupyterIntegration : JupyterIntegration() {
                 mapOf("image/png" to image.toBase64("png")),
             )
         }
+
+        // Return a Dot(...) from a cell to render its DOT source as SVG via
+        // @hpcc-js/wasm-graphviz, loaded into the notebook frontend's webview.
+        render<Dot> { dot -> renderDot(dot) }
 
         onLoaded {
             display(HTML("<i>${NotebookInfo.NAME} v${NotebookInfo.VERSION} ready</i>"), null)

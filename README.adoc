@@ -103,6 +103,43 @@ import sk.ainet.app.notebook.tools.toImage
 imageTensor.toImage(Layout.CHW)
 ----
 
+== Graphviz cell results
+
+Return a `Dot` value from a cell to render a Graphviz graph as inline SVG. The DOT → SVG conversion runs *entirely on the JVM kernel* — a bundled Graphviz wasm artifact is executed by https://github.com/CharlieTap/chasm[chasm], so cell outputs are finished SVG markup with no notebook-side JS evaluation, no CDN fetch, and no dependency on the frontend's wasm engine.
+
+[source, Kotlin]
+----
+Dot("""
+    digraph G {
+        rankdir=LR
+        Input -> Dense1 -> Dense2 -> Output
+    }
+""".trimIndent())
+----
+
+Or via the `String.asDot()` extension:
+
+[source, Kotlin]
+----
+"digraph G { A -> B -> C }".asDot()
+----
+
+Pick a different layout engine and size the container:
+
+[source, Kotlin]
+----
+renderDot("graph G { A -- B -- C -- A }") {
+    engine = DotEngine.NEATO
+    width = "640px"
+    maxHeight = "480px"
+}
+----
+
+[IMPORTANT]
+====
+This release ships the *public API surface and the runtime wiring* for the JVM-side path, but does not yet bundle the Graphviz wasm artifact. Calling `renderDot` currently throws `GraphvizNotBundledException` with a pointer to the follow-up work. Build instructions for the bundled binary live in `wasm-build/` at the repo root (`make image && make graphviz`); the in-source `kotlin-notebook/src/main/resources/sk/ainet/app/notebook/wasm/README.md` documents the expected exports and import set.
+====
+
 [#enabling-simd]
 == Enabling SIMD
 
