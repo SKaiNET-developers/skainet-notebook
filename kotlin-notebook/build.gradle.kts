@@ -37,7 +37,12 @@ dependencies {
     implementation(libs.skainet.io.gguf)
     implementation(libs.skainet.io.onnx)
 
-
+    // JVM-side WebAssembly runtime for the Graphviz cell renderer. The bundled
+    // graphviz.wasm runs entirely on the kernel JVM via chasm; nothing in the
+    // notebook frontend executes JS to render a graph.
+    implementation(libs.chasm.runtime)
+    implementation(libs.weh.bindings.chasm.wasip1)
+    implementation(libs.weh.bindings.chasm.emscripten)
 
     // Resolve sources for SKaiNET libraries to package into our -sources.jar
     add("skainetSources", libs.skainet.lang.core)
@@ -117,6 +122,26 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-io-core-jvm"))
         include(dependency("sk.ainet.core:skainet-io-gguf-jvm"))
         include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))
+
+        // Bundle the wasm runtime so notebook consumers resolving the
+        // published kotlin-notebook jar via @file:DependsOn don't need any
+        // additional repositories. The POM is rewritten to drop runtime deps,
+        // so chasm + weh AND THEIR TRANSITIVES have to live inside the shaded
+        // artifact — at runtime the kernel resolves via POM only, so any
+        // transitive that isn't shaded here surfaces as a NoClassDefFoundError
+        // on first cell that touches the wasm path.
+        include(dependency("io.github.charlietap.chasm:.*"))
+        include(dependency("at.released.weh:.*"))
+        // kotlin-result — chasm uses Result for its ChasmResult/Success/Error.
+        // Missing this caused `NoClassDefFoundError: com/github/michaelbull/result/BindException`
+        // in cells that exercised GraphvizWasm.
+        include(dependency("com.michael-bull.kotlin-result:.*"))
+        // arrow-core — used internally by chasm + weh for typed errors.
+        include(dependency("io.arrow-kt:.*"))
+        // kotlinx-io — chasm decoder reads wasm via SourceReader.
+        include(dependency("org.jetbrains.kotlinx:kotlinx-io-.*"))
+        // pbandk — weh's protocol-buffer encoded message types.
+        include(dependency("pro.streem.pbandk:.*"))
     }
 }
 
@@ -127,6 +152,22 @@ tasks.shadowJar {
 // consumers and sidesteps any future POM-coordinate breakage in upstream
 // SKaiNET modules.
 tasks.named<Jar>("jar") {
+    enabled = false
+}
+
+// Gradle module metadata (`.module`) takes precedence over the POM for any
+// resolver that knows how to read it — including the Kotlin Jupyter kernel.
+// The default `.module` for this project lists apiElements/runtimeElements
+// variants whose `files[]` are empty (because `jar` is disabled above), and
+// the actual shadow jar lives only in a `shadowRuntimeElements` variant that
+// Kotlin Jupyter doesn't select. The consumer ends up downloading our
+// transitive deps without our main artifact — so imports like
+// `sk.ainet.app.notebook.display.*` fail to resolve in cell compilation.
+//
+// Disabling module metadata generation forces resolvers back to the POM,
+// which correctly points at the shadow jar (empty dependencies + a single
+// .jar artifact = exactly what we want for notebook consumers).
+tasks.withType<GenerateModuleMetadata>().configureEach {
     enabled = false
 }
 

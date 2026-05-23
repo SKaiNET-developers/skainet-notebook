@@ -4,9 +4,25 @@ shadow = "9.3.1"
 skainet = "0.22.1"
 dokka = "2.1.0"
 kotlinJupyter = "0.16.0-736"
+# JVM-side WebAssembly runtime for Graphviz rendering. See
+# kotlin-notebook/src/main/resources/sk/ainet/app/notebook/wasm/README.md
+# for how the bundled .wasm is produced.
+chasm = "1.4.5"
+weh = "0.6.0"
 
 
 [libraries]
+# WebAssembly runtime (pure-Kotlin, Wasm 3.0). Used by GraphvizWasm to execute
+# the bundled graphviz.wasm entirely on the JVM kernel — no JS evaluation in
+# notebook cells.
+chasm-runtime = { module = "io.github.charlietap.chasm:chasm", version.ref = "chasm" }
+# WASI Preview 1 host implementation for chasm. Covers fd_*/clock_*/random_*/
+# environ_*/proc_exit — what a wasi-sdk-built Graphviz imports. The Emscripten
+# variant is the fallback path for an unmodified hpcc-js wasm (see scaffold
+# notes in GraphvizWasm.kt).
+weh-bindings-chasm-wasip1 = { module = "at.released.weh:bindings-chasm-wasip1", version.ref = "weh" }
+weh-bindings-chasm-emscripten = { module = "at.released.weh:bindings-chasm-emscripten", version.ref = "weh" }
+
 skainet-lang-core = { module = "sk.ainet.core:skainet-lang-core", version.ref = "skainet" }
 skainet-lang-models = { module = "sk.ainet.core:skainet-lang-models", version.ref = "skainet" }
 skainet-model-yolo = { module = "sk.ainet.core:skainet-model-yolo", version.ref = "skainet" }
