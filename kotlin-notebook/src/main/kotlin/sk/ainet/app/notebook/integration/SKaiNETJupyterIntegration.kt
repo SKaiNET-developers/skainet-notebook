@@ -6,7 +6,6 @@ import org.jetbrains.kotlinx.jupyter.api.libraries.JupyterIntegration
 import sk.ainet.app.notebook.NotebookInfo
 import sk.ainet.app.notebook.checkSimd
 import sk.ainet.app.notebook.display.Dot
-import sk.ainet.app.notebook.display.GraphvizNotBundledException
 import sk.ainet.app.notebook.display.renderDot
 import sk.ainet.app.notebook.display.toBase64
 import sk.ainet.lang.tensor.Tensor
@@ -59,19 +58,7 @@ class SKaiNETJupyterIntegration : JupyterIntegration() {
 
         // Return a Dot(...) from a cell to render its DOT source as SVG via
         // the bundled Graphviz wasm executed by chasm on the JVM kernel.
-        //
-        // While the chasm scaffold is in flight (wasm artifact not yet
-        // bundled) renderDot throws GraphvizNotBundledException — we catch it
-        // here so notebook authors see a friendly banner rather than a stack
-        // trace. Once the wasm lands this catch becomes dead code; remove
-        // when GraphvizWasm.render actually returns SVG.
-        render<Dot> { dot ->
-            try {
-                renderDot(dot)
-            } catch (e: GraphvizNotBundledException) {
-                HTML(graphvizNotBundledHtml(e.message ?: "wasm artifact missing"))
-            }
-        }
+        render<Dot> { dot -> renderDot(dot) }
 
         onLoaded {
             display(HTML("<i>${NotebookInfo.NAME} v${NotebookInfo.VERSION} ready</i>"), null)
@@ -81,17 +68,6 @@ class SKaiNETJupyterIntegration : JupyterIntegration() {
             }
         }
     }
-
-    // Scaffold-only: rendered when a `Dot(...)` cell is evaluated before the
-    // Graphviz wasm artifact has been bundled into resources. Uses the same
-    // amber colour band as `simdWarningHtml` — same "feature degraded, not an
-    // error" semantics.
-    private fun graphvizNotBundledHtml(reason: String): String =
-        """<div style="border-left:3px solid #d97706;padding:8px 12px;margin-top:6px;background:#fef3c7;color:#78350f;font-family:sans-serif">
-            ⚠ <b>Graphviz wasm not yet bundled</b> — `Dot(...)` rendering is wired in but the binary is pending.<br>
-            <span style="font-size:90%">${escape(reason)}<br>
-            See <code>kotlin-notebook/src/main/resources/sk/ainet/app/notebook/wasm/README.md</code> and the build harness in <code>wasm-build/</code> for how the artifact is produced.</span>
-        </div>"""
 
     // Visible at notebook load when SIMD is unreachable. Distinct color band
     // so it doesn't read like an error — the kernel still works on the scalar

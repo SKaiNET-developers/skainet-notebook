@@ -37,12 +37,11 @@ dependencies {
     implementation(libs.skainet.io.gguf)
     implementation(libs.skainet.io.onnx)
 
-    // JVM-side WebAssembly runtime for the Graphviz cell renderer. The bundled
-    // graphviz.wasm runs entirely on the kernel JVM via chasm; nothing in the
-    // notebook frontend executes JS to render a graph.
-    implementation(libs.chasm.runtime)
-    implementation(libs.weh.bindings.chasm.wasip1)
-    implementation(libs.weh.bindings.chasm.emscripten)
+    // The Graphviz cell renderer lives in a separate, Maven-publishable KMP
+    // module so non-notebook consumers can depend on it directly. chasm + weh
+    // come in transitively as runtime deps of that module; the shadowJar
+    // include list below bundles them into the published uber-jar.
+    implementation(project(":skainet-notebook-extensions"))
 
     // Resolve sources for SKaiNET libraries to package into our -sources.jar
     add("skainetSources", libs.skainet.lang.core)
@@ -123,13 +122,15 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-io-gguf-jvm"))
         include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))
 
-        // Bundle the wasm runtime so notebook consumers resolving the
-        // published kotlin-notebook jar via @file:DependsOn don't need any
-        // additional repositories. The POM is rewritten to drop runtime deps,
-        // so chasm + weh AND THEIR TRANSITIVES have to live inside the shaded
-        // artifact — at runtime the kernel resolves via POM only, so any
-        // transitive that isn't shaded here surfaces as a NoClassDefFoundError
-        // on first cell that touches the wasm path.
+        // Bundle the renderer module and the wasm runtime so notebook
+        // consumers resolving the published kotlin-notebook jar via
+        // @file:DependsOn don't need any additional repositories. The POM is
+        // rewritten to drop runtime deps, so the extensions module + chasm +
+        // weh AND THEIR TRANSITIVES have to live inside the shaded artifact —
+        // at runtime the kernel resolves via POM only, so any transitive that
+        // isn't shaded here surfaces as a NoClassDefFoundError on first cell
+        // that touches the wasm path.
+        include(project(":skainet-notebook-extensions"))
         include(dependency("io.github.charlietap.chasm:.*"))
         include(dependency("at.released.weh:.*"))
         // kotlin-result — chasm uses Result for its ChasmResult/Success/Error.

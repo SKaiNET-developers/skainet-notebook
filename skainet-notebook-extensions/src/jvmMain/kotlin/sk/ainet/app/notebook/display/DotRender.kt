@@ -19,7 +19,7 @@ import org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
  */
 
 /** Layout engines exposed by Graphviz. */
-enum class DotEngine {
+public enum class DotEngine {
     DOT,
     NEATO,
     TWOPI,
@@ -30,7 +30,7 @@ enum class DotEngine {
 }
 
 /** Configuration for [renderDot]. */
-data class DotOptions(
+public data class DotOptions(
     /** Layout engine. Defaults to the standard hierarchical `dot` layout. */
     var engine: DotEngine = DotEngine.DOT,
     /** Optional CSS width applied to the SVG container. */
@@ -55,26 +55,26 @@ data class DotOptions(
  * wouldn't match, and the cell would print the raw DOT source instead of the
  * rendered SVG. A real JVM class makes the dispatch work.
  */
-data class Dot(val source: String)
+public data class Dot(val source: String)
 
 /** Wrap a DOT string for the cell-result renderer. */
-fun String.asDot(): Dot = Dot(this)
+public fun String.asDot(): Dot = Dot(this)
 
 /**
  * Render a [Dot] graph as an HTML mime result containing the SVG inline.
  *
  * Throws [GraphvizException] for runtime errors surfaced by the renderer
- * (malformed DOT, layout failure). Throws [GraphvizNotBundledException] on
- * the scaffold branch — until the follow-up PR bundles the wasm artifact.
+ * (malformed DOT, layout failure). Throws [GraphvizNotBundledException] if
+ * the bundled wasm resource cannot be found on the classpath.
  */
-fun renderDot(dot: Dot, configure: DotOptions.() -> Unit = {}): MimeTypedResult {
+public fun renderDot(dot: Dot, configure: DotOptions.() -> Unit = {}): MimeTypedResult {
     val opts = DotOptions().apply(configure)
     val svg = GraphvizWasm.render(dot.source, opts.engine)
     return HTML(wrapSvg(svg, opts))
 }
 
 /** Convenience overload so notebook authors can pass the source directly. */
-fun renderDot(source: String, configure: DotOptions.() -> Unit = {}): MimeTypedResult =
+public fun renderDot(source: String, configure: DotOptions.() -> Unit = {}): MimeTypedResult =
     renderDot(Dot(source), configure)
 
 /**

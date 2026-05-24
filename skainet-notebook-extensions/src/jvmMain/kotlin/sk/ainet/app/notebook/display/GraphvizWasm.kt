@@ -29,9 +29,9 @@ import io.github.charlietap.chasm.runtime.value.NumberValue
  * needing any Emscripten Embind runtime.
  *
  * Bundled artifact provenance: see
- * `kotlin-notebook/src/main/resources/sk/ainet/app/notebook/wasm/README.md`.
+ * `skainet-notebook-extensions/src/jvmMain/resources/sk/ainet/app/notebook/wasm/README.md`.
  */
-internal object GraphvizWasm {
+public object GraphvizWasm {
 
     private const val WASM_RESOURCE_PATH: String = "/sk/ainet/app/notebook/wasm/graphviz.wasm"
 
@@ -46,7 +46,7 @@ internal object GraphvizWasm {
             ?.use { it.readBytes() }
             ?: throw GraphvizNotBundledException(
                 "Bundled Graphviz wasm not found at classpath resource $WASM_RESOURCE_PATH. " +
-                    "See kotlin-notebook/src/main/resources/sk/ainet/app/notebook/wasm/README.md " +
+                    "See skainet-notebook-extensions/src/jvmMain/resources/sk/ainet/app/notebook/wasm/README.md " +
                     "and wasm-build/ for how the artifact is produced.",
             )
         when (val result = module(bytes)) {
@@ -57,7 +57,7 @@ internal object GraphvizWasm {
         }
     }
 
-    fun render(source: String, engine: DotEngine): String {
+    public fun render(source: String, engine: DotEngine): String {
         if (engine != DotEngine.DOT) {
             // Kraphviz's api.c only links the dot + core plugins; other layout
             // engines need `neato_layout` (and friends) linked into the wasm.
@@ -458,10 +458,10 @@ internal object GraphvizWasm {
  * failures, OOM. Carries the DOT source so notebook authors can debug without
  * scraping kernel logs.
  */
-class GraphvizException(
+public class GraphvizException(
     message: String,
-    val source: String,
-    val engine: DotEngine,
+    public val source: String,
+    public val engine: DotEngine,
     cause: Throwable? = null,
 ) : RuntimeException(message, cause)
 
@@ -474,4 +474,4 @@ class GraphvizException(
  * Kept as a distinct exception so any future rebuild that accidentally drops the
  * resource is caught cleanly.
  */
-class GraphvizNotBundledException(message: String) : RuntimeException(message)
+public class GraphvizNotBundledException(message: String) : RuntimeException(message)
