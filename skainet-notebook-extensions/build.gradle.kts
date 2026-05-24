@@ -11,8 +11,10 @@ plugins {
 kotlin {
     explicitApi()
 
+    jvmToolchain(21)
+
     android {
-        namespace = "sk.ainet.pipeline"
+        namespace = "sk.ainet.app.notebook.extensions"
         compileSdk = libs.versions.android.compileSdk.get().toInt()
         minSdk = libs.versions.android.minSdk.get().toInt()
         compilerOptions {
@@ -26,7 +28,17 @@ kotlin {
     linuxX64()
     linuxArm64()
 
-    jvm()
+    jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_21)
+        }
+        // The DOT renderer's test suite uses JUnit 5 (`useJUnitPlatform`)
+        // because kotlin-notebook does the same; matching keeps the
+        // assertion DSL and runner consistent across modules.
+        testRuns["test"].executionTask.configure {
+            useJUnitPlatform()
+        }
+    }
 
     js {
         browser()
@@ -44,11 +56,30 @@ kotlin {
 
     sourceSets {
         commonMain.dependencies {
-            // No dependencies on skainet-lang-core - keep it minimal
+            // The DOT renderer currently lives in jvmMain only; commonMain
+            // stays dependency-free so future cross-platform extractions
+            // (e.g. a browser-wasm renderer) can grow into it cleanly.
         }
 
         commonTest.dependencies {
-            //implementation(libs.kotlin.test)
+            implementation(kotlin("test"))
+        }
+
+        jvmMain.dependencies {
+            // Pure-Kotlin Wasm 3.0 runtime that executes the bundled
+            // graphviz.wasm on the JVM kernel — no JS, no CDN.
+            implementation(libs.chasm.runtime)
+            implementation(libs.weh.bindings.chasm.wasip1)
+            implementation(libs.weh.bindings.chasm.emscripten)
+            // `renderDot` returns `MimeTypedResult` so notebook integrations
+            // can hand its output straight to a cell. Standalone consumers
+            // that don't depend on Kotlin Jupyter can call `GraphvizWasm`
+            // directly for raw SVG.
+            api(libs.kotlin.jupyter.api)
+        }
+
+        jvmTest.dependencies {
+            implementation(kotlin("test-junit5"))
         }
     }
 }

@@ -2,7 +2,12 @@
 
 This directory ships the Graphviz WebAssembly binary that `GraphvizWasm`
 executes on the JVM via [chasm](https://github.com/CharlieTap/chasm) to
-render DOT graphs in notebook cells. No JS, no CDN, no browser dependency.
+render DOT graphs. No JS, no CDN, no browser dependency.
+
+It lives in `skainet-notebook-extensions` (a standalone, Maven-Central-publishable
+KMP artifact) so non-notebook consumers can depend on the renderer without
+pulling the full `kotlin-notebook` shadow jar. The kotlin-notebook integration
+re-exposes it via the `%use skainet-notebook` cell magic.
 
 ## Layout
 
