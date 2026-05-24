@@ -6,8 +6,21 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.25.0] - 2026-05-24
+
 ### Added
-- README "SKaiNET notebook dependency" section now documents the `%use skainet-notebook` magic alongside the existing `@file:DependsOn` form, including version-pin variants (`%use skainet-notebook(0.22.1)`, `@0.22.1`) and a callout that JVM startup args (e.g. `--add-modules jdk.incubator.vector`) still have to be set on the kernel — the registry descriptor cannot inject them. Companion descriptor `skainet-notebook.json` is staged for submission to https://github.com/Kotlin/kotlin-jupyter-libraries; once merged it makes `%use skainet-notebook` work out of the box from any Kotlin Jupyter kernel.
+- New `skainet-notebook-extensions` module — a Kotlin Multiplatform artifact published as `sk.ainet.app:skainet-notebook-extensions:0.25.0` that now owns the Graphviz/DOT cell renderer (`Dot`, `DotEngine`, `DotOptions`, `renderDot`, `GraphvizWasm`) and the bundled `graphviz.wasm`. Standalone consumers can depend on just the renderer without pulling the `kotlin-notebook` shadow jar; the notebook integration re-exposes it via the `%use skainet-notebook` cell magic. Targets the module declares: Android, iOS arm64 + simulator-arm64, macOS arm64, Linux x64/arm64, JVM, JS browser, Wasm-JS browser, Wasm-WASI node. JVM is the only target with a renderer implementation in this release; the others stay empty so a future browser-side wasm renderer can grow into them cleanly. The module ships with explicit-api enforcement and a binary-compatibility-validator API baseline (`skainet-notebook-extensions/api/jvm/`). (#117)
+- README "SKaiNET notebook dependency" section now documents the `%use skainet-notebook` magic alongside the existing `@file:DependsOn` form, including version-pin variants (`%use skainet-notebook(0.25.0)`, `@0.25.0`) and a callout that JVM startup args (e.g. `--add-modules jdk.incubator.vector`) still have to be set on the kernel — the registry descriptor cannot inject them. Companion descriptor `skainet-notebook.json` is staged for submission to https://github.com/Kotlin/kotlin-jupyter-libraries; once merged it makes `%use skainet-notebook` work out of the box from any Kotlin Jupyter kernel.
+- `docs/SIMD.md` — maintainer-facing index that maps both bullets of #60 to their landed implementation (probe + integration warning + build-side `--add-modules`), lists where each piece lives, and points to `README.adoc` → "Enabling SIMD" for the user-facing setup recipes. Closes #60.
+
+### Changed
+- Updated SKaiNET libraries to version 0.25.0 (was 0.22.1). Picks up the 0.23.x / 0.24.x / 0.25.0 release line.
+- `kotlin-notebook` drops its direct `chasm` + `weh` dependencies; they now come transitively through `project(":skainet-notebook-extensions")`. The `shadowJar` include list switched from a coordinate filter to `include(project(...))` so the renderer classes and the `graphviz.wasm` resource get bundled into the published uber-jar — the user-facing `@file:DependsOn` / `%use` behaviour is unchanged.
+- Bumped Gradle wrapper from 9.0 to 9.5.1. 9.4.1 was a prerequisite for the Android KMP plugin landing alongside `skainet-notebook-extensions`; 9.5.1 picks up the dependabot follow-up. (#111)
+- Bumped Kotlin Jupyter API plugin from 0.16.0-736 to 0.19.0-945. (#120)
+- Bumped `NotebookInfo.VERSION` to `0.25.0` so `info()` and the Jupyter integration banner report the actual notebook version.
+- The DOT renderer's bundled `graphviz.wasm` and its provenance README moved from `kotlin-notebook/src/main/resources/sk/ainet/app/notebook/wasm/` to `skainet-notebook-extensions/src/jvmMain/resources/sk/ainet/app/notebook/wasm/`. The classpath resource path (`/sk/ainet/app/notebook/wasm/graphviz.wasm`) is unchanged; only the on-disk source path is different.
+- `GraphvizWasm` is now `public` (previously `internal`) so non-notebook consumers calling `sk.ainet.app:skainet-notebook-extensions` directly can invoke `GraphvizWasm.render(source, engine)` for raw SVG without the jupyter-api `MimeTypedResult` wrapping.
 
 ## [0.22.1] - 2026-05-02
 
