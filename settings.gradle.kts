@@ -16,3 +16,4 @@ dependencyResolutionManagement {
 rootProject.name = "skainet-kotlin-notebook"
 
 include("kotlin-notebook")
+include("skainet-notebook-extensions")
