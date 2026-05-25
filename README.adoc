@@ -139,6 +139,50 @@ NOTE: Only the `dot` layout engine is bundled in the current release. Other engi
 
 NOTE: The DOT renderer ships as a standalone Maven Central artifact — `sk.ainet.app:skainet-notebook-extensions:0.25.0` — so projects that don't need the full notebook integration can depend on just the renderer. The `kotlin-notebook` uber-jar bundles it transitively for the `%use skainet-notebook` path.
 
+== Rendering model architectures
+
+Two helpers wrap the DOT renderer so you can return a model from a cell and see its computational graph as inline SVG. Both are auto-imported by the notebook integration.
+
+`GraphProgram.asDot(rankdir)` — for symbolic DAGs built with the DAG DSL:
+
+[source, Kotlin]
+----
+import sk.ainet.lang.types.FP32
+
+val program = dag {
+    val x = input<FP32>("input", TensorSpec("input", listOf(1, 3, 224, 224), "FP32"))
+    val w = parameter<FP32, Float>("weight") { shape(64, 3, 3, 3) { ones() } }
+    val b = constant<FP32, Float>("bias")    { shape(64) { zeros() } }
+    output(relu(conv2d(x, w, b, stride = 2 to 2, padding = 1 to 1)))
+}
+
+program.asDot()
+----
+
+`Module<T, V>.asDot(input, rankdir)` — for NN-DSL models built with `sequential<T, V> { … }`. Runs one forward pass under a recording tape (the same gradient tracer SKaiNET's autograd backward pass uses), captures every op, and renders the resulting graph:
+
+[source, Kotlin]
+----
+import sk.ainet.lang.types.FP32
+import sk.ainet.lang.nn.dsl.sequential
+
+val ctx = DefaultNeuralNetworkExecutionContext()
+val n = sequential<FP32, Float> {
+    input(2)
+    dense(1)
+    activation { it.tanh() }
+}
+val x = tensor<FP32, Float>(ctx, FP32::class) {
+    tensor { shape(1, 2) { fromArray(floatArrayOf(1.0f, -2.0f)) } }
+}
+
+n.asDot(x)
+----
+
+NOTE: SKaiNET 0.25.0 doesn't ship `tanh` as a `TensorOps` primitive — the notebook integration ships a polyfill (`Tensor<T, V>.tanh()` and `DagBuilder.tanh(input)`) composing the exact identity `tanh(x) = 2*sigmoid(2x) - 1`. The rendered graph shows the `mulScalar -> sigmoid -> mulScalar -> subScalar` decomposition rather than a single `tanh` block. Upstream issue https://github.com/SKaiNET-developers/SKaiNET/issues/630 tracks adding the primitive.
+
+See `notebooks/ext/DagToDot.ipynb`, `notebooks/ext/MicrogradNeuron.ipynb`, and `notebooks/ext/MicrogradNeuronNN.ipynb` for end-to-end examples — the last two tribute Karpathy's https://github.com/karpathy/micrograd[micrograd] `draw_dot(y)` style through both DSLs.
+
 [#enabling-simd]
 == Enabling SIMD
 
