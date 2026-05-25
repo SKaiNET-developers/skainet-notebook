@@ -34,6 +34,10 @@ class SKaiNETJupyterIntegration : JupyterIntegration() {
             "sk.ainet.execute.context.*",
             // `definition { network { dense / input / ... } }`, `Module`
             "sk.ainet.lang.nn.*",
+            // DAG DSL: `dag { input / parameter / constant / conv2d / relu / output }`
+            "sk.ainet.lang.dag.*",
+            // `TensorSpec(name, shape, dtype)` referenced from `input(...)`.
+            "sk.ainet.lang.tensor.ops.*",
             // `Tensor`, `Shape`, `pprint`, `relu`, and the tensor-op extensions
             "sk.ainet.lang.tensor.*",
             // Tensor builder DSL: `tensor<FP32, Float> { shape(...) { ... } }`
