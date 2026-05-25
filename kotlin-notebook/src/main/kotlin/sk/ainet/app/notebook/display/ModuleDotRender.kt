@@ -53,9 +53,18 @@ public fun <T : DType, V> Module<T, V>.asDot(
             if (pushed != null) stack.popTape()
         }
     }
+    // `synthesizeExternalInputs = true` is load-bearing: without it, the
+    // trace-based tape→graph lowering drops every input that has no
+    // producer in the trace (the runtime input tensor, every parameter,
+    // every constant). The rendered DOT then shows only op nodes wired in
+    // a linear chain — a binary op like `add(matmul, bias)` looks like
+    // `add(matmul)` because the bias leaf is missing. Setting the flag
+    // makes the lowering synthesize stub nodes for those externals so
+    // every operand arrow lands on something visible. See the regression
+    // covered by `LeafNodeRenderDebugTest`.
     val graph = when (tape) {
-        is DefaultExecutionTape -> tape.toComputeGraph()
-        else -> tape?.toComputeGraph() ?: DefaultComputeGraph()
+        is DefaultExecutionTape -> tape.toComputeGraph(synthesizeExternalInputs = true)
+        else -> tape?.toComputeGraph(synthesizeExternalInputs = true) ?: DefaultComputeGraph()
     }
     return Dot(graph.toGraphviz(rankdir))
 }
