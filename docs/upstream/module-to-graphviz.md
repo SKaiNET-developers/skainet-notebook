@@ -1,8 +1,12 @@
 # Upstream proposal: `Module<T, V>.toGraphviz(input)`
 
-**Status:** draft — to be filed against `mlx/SKaiNET` once the
+**Status:** draft, Phase 1 — to be filed against `mlx/SKaiNET` once the
 `GraphProgram.toGraphviz()` proposal lands (see
-[`graphprogram-to-graphviz.md`](./graphprogram-to-graphviz.md)).
+[`graphprogram-to-graphviz.md`](./graphprogram-to-graphviz.md)). The
+Phase 2 follow-up that extends the same exporter with per-node `data`
+and `grad` (matching micrograd's `draw_dot` output) is tracked
+separately in [`graphviz-with-grads.md`](./graphviz-with-grads.md) and
+depends on the autograd backward pass landing first.
 
 **Affected modules**
 
