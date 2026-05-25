@@ -34,6 +34,9 @@ class SKaiNETJupyterIntegration : JupyterIntegration() {
             "sk.ainet.execute.context.*",
             // `definition { network { dense / input / ... } }`, `Module`
             "sk.ainet.lang.nn.*",
+            // NN DSL: top-level `sequential<T, V>` builder (members like
+            // `input`, `dense`, `activation` resolve via the lambda receiver).
+            "sk.ainet.lang.nn.dsl.*",
             // DAG DSL: `dag { input / parameter / constant / conv2d / relu / output }`
             "sk.ainet.lang.dag.*",
             // `TensorSpec(name, shape, dtype)` referenced from `input(...)`.
