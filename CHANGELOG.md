@@ -6,6 +6,15 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.26.0] - 2026-05-25
+
+### Added
+- `notebooks/MLP/Micrograd.ipynb` — full port of Karpathy's [micrograd](https://github.com/karpathy/micrograd) `demo.ipynb` (training + held-out accuracy, without visualisations) onto SKaiNET's public DSLs: raw-array → `Tensor` data construction, the NN `sequential<FP32, Float> { … }` builder for the `[2, 16, 16, 1]` tanh MLP, and the `training<FP32, Float> { model { } loss { MSELoss() } optimizer { sgd(lr = 0.1) } }` DSL for the 200-epoch SGD loop. Faithful to the SKaiNET 0.26.0 source's `MicrogradMoonsDemoTest` reference port. Resolves #123.
+
+### Changed
+- Updated SKaiNET libraries to version 0.26.0 (was 0.25.0). Picks up the 0.26.0 release line — first-class `tanh` primitive, `MicrogradMoonsDemoTest` reference port, autograd completeness for `pow` / `log` / conv / pool / upsample / split backward, BF16 + Q8_0 matmul end-to-end.
+- Bumped `NotebookInfo.VERSION` to `0.26.0` so `info()` and the Jupyter integration banner report the actual notebook version.
+
 ## [0.25.1] - 2026-05-25
 
 ### Fixed
