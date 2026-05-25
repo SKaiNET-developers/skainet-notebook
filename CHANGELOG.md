@@ -6,6 +6,14 @@ The format is based on Keep a Changelog, and this project adheres to Semantic Ve
 
 ## [Unreleased]
 
+## [0.25.1] - 2026-05-25
+
+### Fixed
+- Maven Central publication for `skainet-notebook-extensions` failed in the 0.25.0 release pipeline at `:skainet-notebook-extensions:generateMetadataFileForIosArm64Publication` with `FileNotFoundException: …/build/libs/skainet-notebook-extensions-iosArm64Main.klib` (and would have failed identically for iosSimulatorArm64, macosArm64, linuxX64, linuxArm64, js, wasmJs, wasmWasi). Root cause: `commonMain` shipped without a single source file, so every per-target `compileKotlinXxx` ran as NO-SOURCE, no klib was produced, and the publication's metadata writer then SHA-512-hashed a missing file. Added a single `internal` placeholder under `skainet-notebook-extensions/src/commonMain/kotlin/sk/ainet/app/notebook/extensions/Placeholder.kt` so each target compiles a non-empty klib. The renderer implementation still lives only in `jvmMain`; the placeholder is `internal` and stays out of the binary-compatibility-validator ABI dump.
+
+### Changed
+- `signAllPublications` flipped from `false` to `true` in `gradle.properties`. Sonatype Central requires PGP signatures for new releases, and the `release.yml` workflow already wires `ORG_GRADLE_PROJECT_signingInMemoryKey` / `signingInMemoryKeyPassword` from the `GPG_PRIVATE_KEY` / `SIGNING_PASSWORD` repo secrets — this just turns on the path that was sitting dormant in 0.25.0.
+
 ## [0.25.0] - 2026-05-25
 
 ### Added
