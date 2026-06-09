@@ -5,8 +5,6 @@ image:https://img.shields.io/badge/License-MIT-yellow.svg[License: MIT, link=LIC
 image:https://img.shields.io/maven-central/v/sk.ainet.app/kotlin-notebook.svg[Maven Central, link=https://central.sonatype.com/artifact/sk.ainet.app/kotlin-notebook]
 
 
-IMPORTANT: *About the name*  “SKaiNET” - it is a *working project name* chosen early in the project’s life as part of a personal learning and experimentation effort, before any trademark considerations were known. The name is *not intended to reference, infringe, or imply association with any existing trademarks, companies, or products*. It is not a commercial brand and is *not claimed or assignable* to any company or organization that contributors may be affiliated with. If a naming conflict arises, the project name may be changed in the future.
-
 [.lead]
 Empower your deep machine learning data science workflows with Kotlin's type safety and expressiveness in https://kotlinlang.org/docs/kotlin-notebook-overview.html[Kotlin Notebooks].
 
@@ -53,8 +51,8 @@ Pin a specific version (otherwise the registry's `properties.v` wins):
 
 [source, Kotlin]
 ----
-%use skainet-notebook(0.26.0)
-%use skainet-notebook@0.26.0
+%use skainet-notebook(0.29.1)
+%use skainet-notebook@0.29.1
 ----
 
 Combine with other registry libraries in the usual comma-separated form:
@@ -72,7 +70,7 @@ When you need to pin against a specific Maven coordinate without depending on th
 
 [source]
 ----
-@file:DependsOn("sk.ainet.app:kotlin-notebook:0.26.0")
+@file:DependsOn("sk.ainet.app:kotlin-notebook:0.29.1")
 ----
 
 In either case the first cell that needs SKaiNET looks the same:
@@ -137,7 +135,7 @@ renderDot("graph G { A -- B -- C -- A }") {
 
 NOTE: Only the `dot` layout engine is bundled in the current release. Other engines (`neato`, `twopi`, ...) raise `GraphvizException` with a clear "not bundled" message; they'll be added when the reproducible build at `wasm-build/` produces an artifact linking the `neato_layout` plugin. The current `graphviz.wasm` is sourced from https://github.com/Yeicor/Kraphviz[Kraphviz] as an interim artifact — see `skainet-notebook-extensions/src/jvmMain/resources/sk/ainet/app/notebook/wasm/README.md` for provenance.
 
-NOTE: The DOT renderer ships as a standalone Maven Central artifact — `sk.ainet.app:skainet-notebook-extensions:0.26.0` — so projects that don't need the full notebook integration can depend on just the renderer. The `kotlin-notebook` uber-jar bundles it transitively for the `%use skainet-notebook` path.
+NOTE: The DOT renderer ships as a standalone Maven Central artifact — `sk.ainet.app:skainet-notebook-extensions:0.29.1` — so projects that don't need the full notebook integration can depend on just the renderer. The `kotlin-notebook` uber-jar bundles it transitively for the `%use skainet-notebook` path.
 
 == Rendering model architectures
 
@@ -232,3 +230,6 @@ If you need to compare against the scalar path (e.g. for a benchmark or to triag
 
 * JVM property: `-Dskainet.cpu.vector.enabled=false`
 * Environment variable: `SKAINET_CPU_VECTOR_ENABLED=false`
+
+
+IMPORTANT: *About the name*  “SKaiNET” - it is a *working project name* chosen early in the project’s life as part of a personal learning and experimentation effort, before any trademark considerations were known. The name is *not intended to reference, infringe, or imply association with any existing trademarks, companies, or products*. It is not a commercial brand and is *not claimed or assignable* to any company or organization that contributors may be affiliated with. If a naming conflict arises, the project name may be changed in the future.
