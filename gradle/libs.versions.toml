@@ -11,7 +11,7 @@ binaryCompatibilityValidator = "0.18.1"
 # JVM-side WebAssembly runtime for Graphviz rendering. See
 # skainet-notebook-extensions/src/jvmMain/resources/sk/ainet/app/notebook/wasm/README.md
 # for how the bundled .wasm is produced.
-chasm = "1.4.6"
+chasm = "1.4.7"
 weh = "0.6.0"
 
 
