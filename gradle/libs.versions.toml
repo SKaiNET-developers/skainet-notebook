@@ -2,16 +2,16 @@
 agp = "9.2.1"
 android-minSdk = "24"
 android-compileSdk = "36"
-kotlin = "2.3.21"
+kotlin = "2.4.10"
 shadow = "9.6.1"
-skainet = "0.32.3"
+skainet = "0.38.0"
 dokka = "2.2.0"
 kotlinJupyter = "0.16.0-736"
 binaryCompatibilityValidator = "0.18.1"
 # JVM-side WebAssembly runtime for Graphviz rendering. See
 # skainet-notebook-extensions/src/jvmMain/resources/sk/ainet/app/notebook/wasm/README.md
 # for how the bundled .wasm is produced.
-chasm = "1.4.7"
+chasm = "1.4.8"
 weh = "0.6.0"
 
 
