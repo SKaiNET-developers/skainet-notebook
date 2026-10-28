@@ -26,7 +26,6 @@ val skainetSources by configurations.creating {
 dependencies {
     implementation(libs.skainet.lang.core)
     implementation(libs.skainet.lang.models)
-    implementation(libs.skainet.model.yolo)
     implementation(libs.skainet.lang.dag)
     implementation(libs.skainet.compile.core)
     implementation(libs.skainet.compile.dag)
@@ -48,7 +47,6 @@ dependencies {
     add("skainetSources", libs.skainet.backend.cpu)
     add("skainetSources", libs.skainet.data.api)
     add("skainetSources", libs.skainet.data.simple)
-    add("skainetSources", libs.skainet.model.yolo)
     add("skainetSources", libs.skainet.io.core)
     add("skainetSources", libs.skainet.io.gguf)
     add("skainetSources", libs.skainet.io.onnx)
@@ -90,7 +88,6 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-lang-models"))
         include(dependency("sk.ainet.core:skainet-lang-core-jvm"))
         include(dependency("sk.ainet.core:skainet-lang-models-jvm"))
-        include(dependency("sk.ainet.core:skainet-model-yolo-jvm"))
         include(dependency("sk.ainet.core:skainet-lang-dag"))
         include(dependency("sk.ainet.core:skainet-lang-dag-jvm"))
         include(dependency("sk.ainet.core:skainet-compile-core"))
