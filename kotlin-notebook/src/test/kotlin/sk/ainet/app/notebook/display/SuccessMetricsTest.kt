@@ -59,25 +59,33 @@ class SuccessMetricsTest {
     fun oneLiners_work_for_supported_inputs() {
         val results = mutableListOf<Any>()
 
+        // 1-liner for BufferedImage
         results += display(img())
 
+        // 1-liner for ByteArray
         val pngBytes = ByteArrayOutputStream().also { ImageIO.write(img(), "png", it) }.toByteArray()
         results += display(pngBytes)
 
+        // 1-liner for String path
         val tmp = Files.createTempFile("success-metrics", ".png")
         try {
             ImageIO.write(img(), "png", tmp.toFile())
             results += display(tmp.toString())
         } finally { Files.deleteIfExists(tmp) }
 
+        // 1-liner for URL
         val port = server?.address?.port ?: error("server not started")
         results += display(URL("http://127.0.0.1:$port/img"))
 
-        val combined = results.joinToString("\n") { r ->
-            (r as? Map<*, *>)?.get("text/html")?.toString() ?: r.toString()
+        // Every display() call must produce an HTML mime entry containing an inline <img> data URL
+        results.forEachIndexed { idx, result ->
+            val mime = result as? org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
+                ?: error("display() #$idx returned ${result::class.simpleName} instead of MimeTypedResult")
+            val html = mime[org.jetbrains.kotlinx.jupyter.api.MimeTypes.HTML]
+                ?: error("display() #$idx has no HTML mime entry, keys=${mime.keys}")
+            assertContains(html, "<img ")
+            assertContains(html, "src=\"data:image/png;base64,")
         }
-        assertContains(combined, "<img ")
-        assertContains(combined, "src=\"data:image/png;base64,")
     }
 
     @Test

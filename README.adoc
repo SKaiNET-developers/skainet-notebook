@@ -5,8 +5,6 @@ image:https://img.shields.io/badge/License-MIT-yellow.svg[License: MIT, link=LIC
 image:https://img.shields.io/maven-central/v/sk.ainet.app/kotlin-notebook.svg[Maven Central, link=https://central.sonatype.com/artifact/sk.ainet.app/kotlin-notebook]
 
 
-IMPORTANT: *About the name*  “SKaiNET” - it is a *working project name* chosen early in the project’s life as part of a personal learning and experimentation effort, before any trademark considerations were known. The name is *not intended to reference, infringe, or imply association with any existing trademarks, companies, or products*. It is not a commercial brand and is *not claimed or assignable* to any company or organization that contributors may be affiliated with. If a naming conflict arises, the project name may be changed in the future.
-
 [.lead]
 Empower your deep machine learning data science workflows with Kotlin's type safety and expressiveness in https://kotlinlang.org/docs/kotlin-notebook-overview.html[Kotlin Notebooks].
 
@@ -38,12 +36,44 @@ You can create Kotlin notebooks directly in IntelliJ IDEA using one of these met
 
 == SKaiNET notebook dependency
 
-Use SKaiNET directly in a Kotlin Notebook via Maven Central.
+There are two ways to pull SKaiNET into a Kotlin Notebook cell. Pick whichever fits your kernel — both load the same uber-jar and run the same `SKaiNETJupyterIntegration` (default imports, tensor / image renderers, ready banner, SIMD-availability check).
+
+=== Via `%use` magic (registry-driven)
+
+Once `skainet-notebook.json` lands in the https://github.com/Kotlin/kotlin-jupyter-libraries[Kotlin Jupyter library registry], a single line is enough — the kernel resolves the artifact coordinate and version pin from the registry and the in-classpath integration takes over from there:
+
+[source, Kotlin]
+----
+%use skainet-notebook
+----
+
+Pin a specific version (otherwise the registry's `properties.v` wins):
+
+[source, Kotlin]
+----
+%use skainet-notebook(0.29.1)
+%use skainet-notebook@0.29.1
+----
+
+Combine with other registry libraries in the usual comma-separated form:
+
+[source, Kotlin]
+----
+%use skainet-notebook, dataframe, lets-plot
+----
+
+NOTE: JVM startup arguments (notably `--add-modules jdk.incubator.vector`, see <<enabling-simd>>) cannot be set from a registry descriptor — they have to be configured on the kernel itself. The integration will still load on a vanilla kernel; it will just emit the SIMD-not-active warning and run the scalar CPU path.
+
+=== Via `@file:DependsOn` (explicit coordinate)
+
+When you need to pin against a specific Maven coordinate without depending on the registry (offline kernels, internal mirrors, locked-down environments):
 
 [source]
 ----
-@file:DependsOn("sk.ainet.app:kotlin-notebook:0.11.0")
+@file:DependsOn("sk.ainet.app:kotlin-notebook:0.29.1")
 ----
+
+In either case the first cell that needs SKaiNET looks the same:
 
 .code
 [source, Kotlin]
@@ -70,3 +100,136 @@ import sk.ainet.app.notebook.tools.toImage
 
 imageTensor.toImage(Layout.CHW)
 ----
+
+== Graphviz cell results
+
+Return a `Dot` value from a cell to render a Graphviz graph as inline SVG. The DOT → SVG conversion runs *entirely on the JVM kernel* — a bundled Graphviz wasm artifact is executed by https://github.com/CharlieTap/chasm[chasm], so cell outputs are finished SVG markup with no notebook-side JS evaluation, no CDN fetch, and no dependency on the frontend's wasm engine.
+
+[source, Kotlin]
+----
+Dot("""
+    digraph G {
+        rankdir=LR
+        Input -> Dense1 -> Dense2 -> Output
+    }
+""".trimIndent())
+----
+
+Or via the `String.asDot()` extension:
+
+[source, Kotlin]
+----
+"digraph G { A -> B -> C }".asDot()
+----
+
+Pick a different layout engine and size the container:
+
+[source, Kotlin]
+----
+renderDot("graph G { A -- B -- C -- A }") {
+    engine = DotEngine.NEATO
+    width = "640px"
+    maxHeight = "480px"
+}
+----
+
+NOTE: Only the `dot` layout engine is bundled in the current release. Other engines (`neato`, `twopi`, ...) raise `GraphvizException` with a clear "not bundled" message; they'll be added when the reproducible build at `wasm-build/` produces an artifact linking the `neato_layout` plugin. The current `graphviz.wasm` is sourced from https://github.com/Yeicor/Kraphviz[Kraphviz] as an interim artifact — see `skainet-notebook-extensions/src/jvmMain/resources/sk/ainet/app/notebook/wasm/README.md` for provenance.
+
+NOTE: The DOT renderer ships as a standalone Maven Central artifact — `sk.ainet.app:skainet-notebook-extensions:0.29.1` — so projects that don't need the full notebook integration can depend on just the renderer. The `kotlin-notebook` uber-jar bundles it transitively for the `%use skainet-notebook` path.
+
+== Rendering model architectures
+
+Two helpers wrap the DOT renderer so you can return a model from a cell and see its computational graph as inline SVG. Both are auto-imported by the notebook integration.
+
+`GraphProgram.asDot(rankdir)` — for symbolic DAGs built with the DAG DSL:
+
+[source, Kotlin]
+----
+import sk.ainet.lang.types.FP32
+
+val program = dag {
+    val x = input<FP32>("input", TensorSpec("input", listOf(1, 3, 224, 224), "FP32"))
+    val w = parameter<FP32, Float>("weight") { shape(64, 3, 3, 3) { ones() } }
+    val b = constant<FP32, Float>("bias")    { shape(64) { zeros() } }
+    output(relu(conv2d(x, w, b, stride = 2 to 2, padding = 1 to 1)))
+}
+
+program.asDot()
+----
+
+`Module<T, V>.asDot(input, rankdir)` — for NN-DSL models built with `sequential<T, V> { … }`. Runs one forward pass under a recording tape (the same gradient tracer SKaiNET's autograd backward pass uses), captures every op, and renders the resulting graph:
+
+[source, Kotlin]
+----
+import sk.ainet.lang.types.FP32
+import sk.ainet.lang.nn.dsl.sequential
+
+val ctx = DefaultNeuralNetworkExecutionContext()
+val n = sequential<FP32, Float> {
+    input(2)
+    dense(1)
+    activation { it.tanh() }
+}
+val x = tensor<FP32, Float>(ctx, FP32::class) {
+    tensor { shape(1, 2) { fromArray(floatArrayOf(1.0f, -2.0f)) } }
+}
+
+n.asDot(x)
+----
+
+NOTE: SKaiNET 0.25.0 doesn't ship `tanh` as a `TensorOps` primitive — the notebook integration ships a polyfill (`Tensor<T, V>.tanh()` and `DagBuilder.tanh(input)`) composing the exact identity `tanh(x) = 2*sigmoid(2x) - 1`. The rendered graph shows the `mulScalar -> sigmoid -> mulScalar -> subScalar` decomposition rather than a single `tanh` block. Upstream issue https://github.com/SKaiNET-developers/SKaiNET/issues/630 tracks adding the primitive.
+
+See `notebooks/ext/DagToDot.ipynb`, `notebooks/ext/MicrogradNeuron.ipynb`, and `notebooks/ext/MicrogradNeuronNN.ipynb` for end-to-end examples — the last two tribute Karpathy's https://github.com/karpathy/micrograd[micrograd] `draw_dot(y)` style through both DSLs.
+
+[#enabling-simd]
+== Enabling SIMD
+
+SKaiNET's CPU backend uses the JDK Vector API (`jdk.incubator.vector`) for SIMD-accelerated matmul, quantized kernels (Q4_K, Q6_K, Q8_0, TurboQuant), and elementwise/reduction ops. The Vector API is an incubator module — it is shipped with the JDK but *not* in the default module graph, so the kernel JVM has to be started with `--add-modules jdk.incubator.vector` for SKaiNET to install the SIMD kernels. Without that flag, SKaiNET silently falls back to scalar `DefaultCpuOps`.
+
+When the notebook integration loads, it runs the same probe SKaiNET's CPU backend uses and renders a yellow warning if the SIMD path is unreachable. You can also call `checkSimd()` from any cell:
+
+[source, Kotlin]
+----
+checkSimd()
+// SimdReport(jdkFeatureVersion=21, jdkOk=true, vectorApiAvailable=true,
+//            configEnabled=true, simdActive=true, reason=Vector API kernels active)
+----
+
+The first `DirectCpuExecutionContext.create()` call also prints one of:
+
+----
+[SKaiNET] Using SIMD-accelerated CPU operations (Vector API)
+[SKaiNET] Using standard CPU operations (Vector API not available)
+----
+
+=== IntelliJ Kotlin Notebook
+
+Settings → *Languages & Frameworks* → *Kotlin* → *Kotlin Notebook* → *JVM options for Kotlin Notebook*, add:
+
+----
+--add-modules jdk.incubator.vector
+----
+
+Restart the kernel (toolbar → kernel menu → *Restart Kernel*).
+
+=== Plain Jupyter with the Kotlin kernel
+
+Either set the env var before launching Jupyter:
+
+[source, shell]
+----
+export KOTLIN_JUPYTER_JAVA_OPTS="--add-modules=jdk.incubator.vector"
+jupyter notebook
+----
+
+…or edit the kernel descriptor (`jupyter kernelspec list` to find the `kotlin` entry's directory, open its `kernel.json`, and add `"--add-modules", "jdk.incubator.vector"` to the `argv` array before `-jar`).
+
+=== Disabling SIMD
+
+If you need to compare against the scalar path (e.g. for a benchmark or to triage a numerical regression) set either:
+
+* JVM property: `-Dskainet.cpu.vector.enabled=false`
+* Environment variable: `SKAINET_CPU_VECTOR_ENABLED=false`
+
+
+IMPORTANT: *About the name*  “SKaiNET” - it is a *working project name* chosen early in the project’s life as part of a personal learning and experimentation effort, before any trademark considerations were known. The name is *not intended to reference, infringe, or imply association with any existing trademarks, companies, or products*. It is not a commercial brand and is *not claimed or assignable* to any company or organization that contributors may be affiliated with. If a naming conflict arises, the project name may be changed in the future.

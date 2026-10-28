@@ -36,7 +36,11 @@ dependencies {
     implementation(libs.skainet.io.gguf)
     implementation(libs.skainet.io.onnx)
 
-
+    // The Graphviz cell renderer lives in a separate, Maven-publishable KMP
+    // module so non-notebook consumers can depend on it directly. chasm + weh
+    // come in transitively as runtime deps of that module; the shadowJar
+    // include list below bundles them into the published uber-jar.
+    implementation(project(":skainet-notebook-extensions"))
 
     // Resolve sources for SKaiNET libraries to package into our -sources.jar
     add("skainetSources", libs.skainet.lang.core)
@@ -56,6 +60,16 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
+    // SKaiNET's CPU backend uses the JDK Vector API (jdk.incubator.vector) for
+    // SIMD-accelerated kernels. The module is not in the default module graph,
+    // so without --add-modules the runtime probe in NotebookInfoTest would
+    // always see "Vector API not available" and we'd never exercise the
+    // active-path branch.
+    jvmArgs("--add-modules", "jdk.incubator.vector")
+}
+
+tasks.processJupyterApiResources {
+    libraryProducers = listOf("sk.ainet.app.notebook.integration.SKaiNETJupyterIntegration")
 }
 
 kotlin {
@@ -97,10 +111,76 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-backend-cpu"))
         include(dependency("sk.ainet.core:skainet-compile-core-jvm"))
         include(dependency("sk.ainet.core:skainet-backend-cpu-jvm"))
+        include(dependency("sk.ainet.core:skainet-backend-api-jvm"))
+        include(dependency("sk.ainet.core:skainet-lang-ksp-annotations-jvm"))
         include(dependency("sk.ainet.core:skainet-data-api-jvm"))
         include(dependency("sk.ainet.core:skainet-data-simple-jvm"))
         include(dependency("sk.ainet.core:skainet-io-core-jvm"))
         include(dependency("sk.ainet.core:skainet-io-gguf-jvm"))
         include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))
+
+        // Bundle the renderer module and the wasm runtime so notebook
+        // consumers resolving the published kotlin-notebook jar via
+        // @file:DependsOn don't need any additional repositories. The POM is
+        // rewritten to drop runtime deps, so the extensions module + chasm +
+        // weh AND THEIR TRANSITIVES have to live inside the shaded artifact —
+        // at runtime the kernel resolves via POM only, so any transitive that
+        // isn't shaded here surfaces as a NoClassDefFoundError on first cell
+        // that touches the wasm path.
+        include(project(":skainet-notebook-extensions"))
+        include(dependency("io.github.charlietap.chasm:.*"))
+        include(dependency("at.released.weh:.*"))
+        // kotlin-result — chasm uses Result for its ChasmResult/Success/Error.
+        // Missing this caused `NoClassDefFoundError: com/github/michaelbull/result/BindException`
+        // in cells that exercised GraphvizWasm.
+        include(dependency("com.michael-bull.kotlin-result:.*"))
+        // arrow-core — used internally by chasm + weh for typed errors.
+        include(dependency("io.arrow-kt:.*"))
+        // kotlinx-io — chasm decoder reads wasm via SourceReader.
+        include(dependency("org.jetbrains.kotlinx:kotlinx-io-.*"))
+        // pbandk — weh's protocol-buffer encoded message types.
+        include(dependency("pro.streem.pbandk:.*"))
+    }
+}
+
+// Publish the shadow uber-jar as the main artifact and drop all runtime deps
+// from the POM. Kotlin Jupyter's `@file:DependsOn` resolves transitively from
+// the published POM, so a single self-contained jar with an empty
+// <dependencies> block is the most reliable distribution shape for notebook
+// consumers and sidesteps any future POM-coordinate breakage in upstream
+// SKaiNET modules.
+tasks.named<Jar>("jar") {
+    enabled = false
+}
+
+// Gradle module metadata (`.module`) takes precedence over the POM for any
+// resolver that knows how to read it — including the Kotlin Jupyter kernel.
+// The default `.module` for this project lists apiElements/runtimeElements
+// variants whose `files[]` are empty (because `jar` is disabled above), and
+// the actual shadow jar lives only in a `shadowRuntimeElements` variant that
+// Kotlin Jupyter doesn't select. The consumer ends up downloading our
+// transitive deps without our main artifact — so imports like
+// `sk.ainet.app.notebook.display.*` fail to resolve in cell compilation.
+//
+// Disabling module metadata generation forces resolvers back to the POM,
+// which correctly points at the shadow jar (empty dependencies + a single
+// .jar artifact = exactly what we want for notebook consumers).
+tasks.withType<GenerateModuleMetadata>().configureEach {
+    enabled = false
+}
+
+afterEvaluate {
+    publishing.publications.withType<MavenPublication>().configureEach {
+        artifacts.toList()
+            .filter { it.classifier.isNullOrEmpty() && it.extension == "jar" }
+            .forEach { artifacts.remove(it) }
+        artifact(tasks.shadowJar) { classifier = "" }
+
+        pom.withXml {
+            val root = asNode()
+            (root.get("dependencies") as? groovy.util.NodeList)
+                ?.toList()
+                ?.forEach { root.remove(it as groovy.util.Node) }
+        }
     }
 }

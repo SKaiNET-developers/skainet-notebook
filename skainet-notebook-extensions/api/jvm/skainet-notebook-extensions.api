@@ -1,0 +1,68 @@
+public final class sk/ainet/app/notebook/display/Dot {
+	public fun <init> (Ljava/lang/String;)V
+	public final fun component1 ()Ljava/lang/String;
+	public final fun copy (Ljava/lang/String;)Lsk/ainet/app/notebook/display/Dot;
+	public static synthetic fun copy$default (Lsk/ainet/app/notebook/display/Dot;Ljava/lang/String;ILjava/lang/Object;)Lsk/ainet/app/notebook/display/Dot;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getSource ()Ljava/lang/String;
+	public fun hashCode ()I
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class sk/ainet/app/notebook/display/DotEngine : java/lang/Enum {
+	public static final field CIRCO Lsk/ainet/app/notebook/display/DotEngine;
+	public static final field DOT Lsk/ainet/app/notebook/display/DotEngine;
+	public static final field FDP Lsk/ainet/app/notebook/display/DotEngine;
+	public static final field NEATO Lsk/ainet/app/notebook/display/DotEngine;
+	public static final field OSAGE Lsk/ainet/app/notebook/display/DotEngine;
+	public static final field PATCHWORK Lsk/ainet/app/notebook/display/DotEngine;
+	public static final field TWOPI Lsk/ainet/app/notebook/display/DotEngine;
+	public static fun getEntries ()Lkotlin/enums/EnumEntries;
+	public static fun valueOf (Ljava/lang/String;)Lsk/ainet/app/notebook/display/DotEngine;
+	public static fun values ()[Lsk/ainet/app/notebook/display/DotEngine;
+}
+
+public final class sk/ainet/app/notebook/display/DotOptions {
+	public fun <init> ()V
+	public fun <init> (Lsk/ainet/app/notebook/display/DotEngine;Ljava/lang/String;Ljava/lang/String;)V
+	public synthetic fun <init> (Lsk/ainet/app/notebook/display/DotEngine;Ljava/lang/String;Ljava/lang/String;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun component1 ()Lsk/ainet/app/notebook/display/DotEngine;
+	public final fun component2 ()Ljava/lang/String;
+	public final fun component3 ()Ljava/lang/String;
+	public final fun copy (Lsk/ainet/app/notebook/display/DotEngine;Ljava/lang/String;Ljava/lang/String;)Lsk/ainet/app/notebook/display/DotOptions;
+	public static synthetic fun copy$default (Lsk/ainet/app/notebook/display/DotOptions;Lsk/ainet/app/notebook/display/DotEngine;Ljava/lang/String;Ljava/lang/String;ILjava/lang/Object;)Lsk/ainet/app/notebook/display/DotOptions;
+	public fun equals (Ljava/lang/Object;)Z
+	public final fun getEngine ()Lsk/ainet/app/notebook/display/DotEngine;
+	public final fun getMaxHeight ()Ljava/lang/String;
+	public final fun getWidth ()Ljava/lang/String;
+	public fun hashCode ()I
+	public final fun setEngine (Lsk/ainet/app/notebook/display/DotEngine;)V
+	public final fun setMaxHeight (Ljava/lang/String;)V
+	public final fun setWidth (Ljava/lang/String;)V
+	public fun toString ()Ljava/lang/String;
+}
+
+public final class sk/ainet/app/notebook/display/DotRenderKt {
+	public static final fun asDot (Ljava/lang/String;)Lsk/ainet/app/notebook/display/Dot;
+	public static final fun renderDot (Ljava/lang/String;Lkotlin/jvm/functions/Function1;)Lorg/jetbrains/kotlinx/jupyter/api/MimeTypedResult;
+	public static final fun renderDot (Lsk/ainet/app/notebook/display/Dot;Lkotlin/jvm/functions/Function1;)Lorg/jetbrains/kotlinx/jupyter/api/MimeTypedResult;
+	public static synthetic fun renderDot$default (Ljava/lang/String;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/jetbrains/kotlinx/jupyter/api/MimeTypedResult;
+	public static synthetic fun renderDot$default (Lsk/ainet/app/notebook/display/Dot;Lkotlin/jvm/functions/Function1;ILjava/lang/Object;)Lorg/jetbrains/kotlinx/jupyter/api/MimeTypedResult;
+}
+
+public final class sk/ainet/app/notebook/display/GraphvizException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;Ljava/lang/String;Lsk/ainet/app/notebook/display/DotEngine;Ljava/lang/Throwable;)V
+	public synthetic fun <init> (Ljava/lang/String;Ljava/lang/String;Lsk/ainet/app/notebook/display/DotEngine;Ljava/lang/Throwable;ILkotlin/jvm/internal/DefaultConstructorMarker;)V
+	public final fun getEngine ()Lsk/ainet/app/notebook/display/DotEngine;
+	public final fun getSource ()Ljava/lang/String;
+}
+
+public final class sk/ainet/app/notebook/display/GraphvizNotBundledException : java/lang/RuntimeException {
+	public fun <init> (Ljava/lang/String;)V
+}
+
+public final class sk/ainet/app/notebook/display/GraphvizWasm {
+	public static final field INSTANCE Lsk/ainet/app/notebook/display/GraphvizWasm;
+	public final fun render (Ljava/lang/String;Lsk/ainet/app/notebook/display/DotEngine;)Ljava/lang/String;
+}
+

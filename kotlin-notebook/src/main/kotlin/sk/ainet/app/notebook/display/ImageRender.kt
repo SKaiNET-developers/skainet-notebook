@@ -158,13 +158,14 @@ fun display(images: List<Any>, configure: DisplayOptions.() -> Unit = {}):Any {
 }
 
 /**
- * Emit raw HTML to the Kotlin Notebook output area.
- * Returns a MimeTypedResult so Jupyter renders the HTML instead of showing it as text.
+ * Wrap raw HTML in a Jupyter [MimeTypedResult] so returning it from a notebook
+ * cell renders as HTML rather than as an escaped string.
  */
 fun emitHtml(html: String): MimeTypedResult = HTML(html)
 
 /**
- * Render a BufferedImage as an inline <img> with a data URL source and display it.
+ * Render a BufferedImage as an inline <img> with a data URL source. Returns a
+ * [MimeTypedResult] that Jupyter displays as HTML.
  */
 fun render(img: BufferedImage, configure: DisplayOptions.() -> Unit = {}): MimeTypedResult {
     val opts = DisplayOptions().apply(configure)

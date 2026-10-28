@@ -130,7 +130,9 @@ class ImageRenderTest {
             border = true
             cssClass = "thumb"
         }
-        val html = result["text/html"] ?: error("missing text/html mime in result: $result")
+
+        val html = result[org.jetbrains.kotlinx.jupyter.api.MimeTypes.HTML]
+            ?: error("render() should produce an HTML mime entry, got keys=${result.keys}")
         assertContains(html, "<img ")
         assertContains(html, "width=\"100\"")
         assertContains(html, "height=\"80\"")
@@ -145,8 +147,9 @@ class ImageRenderTest {
         val imgs = listOf(makeTestImage(4, 4), makeTestImage(5, 5))
         val result = renderGrid(imgs) {
             width = 50
-        }
-        val html = result["text/html"] ?: error("missing text/html mime in result: $result")
+        } as org.jetbrains.kotlinx.jupyter.api.MimeTypedResult
+        val html = result[org.jetbrains.kotlinx.jupyter.api.MimeTypes.HTML]
+            ?: error("renderGrid() should produce an HTML mime entry, got keys=${result.keys}")
         assertContains(html, "<div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;\">")
         assertTrue(Regex("<img ").findAll(html).count() >= 2)
         assertContains(html, "width=\"50\"")
