@@ -32,9 +32,13 @@ dependencies {
     implementation(libs.skainet.backend.cpu)
     implementation(libs.skainet.data.api)
     implementation(libs.skainet.data.simple)
+    implementation(libs.skainet.data.source)
+    implementation(libs.skainet.frontend.core)
+    implementation(libs.skainet.frontend.text)
     implementation(libs.skainet.io.core)
     implementation(libs.skainet.io.gguf)
     implementation(libs.skainet.io.onnx)
+    implementation(libs.skainet.io.safetensors)
 
     // The Graphviz cell renderer lives in a separate, Maven-publishable KMP
     // module so non-notebook consumers can depend on it directly. chasm + weh
@@ -51,9 +55,13 @@ dependencies {
     add("skainetSources", libs.skainet.backend.cpu)
     add("skainetSources", libs.skainet.data.api)
     add("skainetSources", libs.skainet.data.simple)
+    add("skainetSources", libs.skainet.data.source)
+    add("skainetSources", libs.skainet.frontend.core)
+    add("skainetSources", libs.skainet.frontend.text)
     add("skainetSources", libs.skainet.io.core)
     add("skainetSources", libs.skainet.io.gguf)
     add("skainetSources", libs.skainet.io.onnx)
+    add("skainetSources", libs.skainet.io.safetensors)
 
     testImplementation(kotlin("test"))
 }
@@ -115,9 +123,13 @@ tasks.shadowJar {
         include(dependency("sk.ainet.core:skainet-lang-ksp-annotations-jvm"))
         include(dependency("sk.ainet.core:skainet-data-api-jvm"))
         include(dependency("sk.ainet.core:skainet-data-simple-jvm"))
+        include(dependency("sk.ainet.core:skainet-data-source-jvm"))
+        include(dependency("sk.ainet.core:skainet-frontend-core-jvm"))
+        include(dependency("sk.ainet.core:skainet-frontend-text-jvm"))
         include(dependency("sk.ainet.core:skainet-io-core-jvm"))
         include(dependency("sk.ainet.core:skainet-io-gguf-jvm"))
         include(dependency("sk.ainet.core:skainet-io-onnx-jvm"))
+        include(dependency("sk.ainet.core:skainet-io-safetensors-jvm"))
 
         // Bundle the renderer module and the wasm runtime so notebook
         // consumers resolving the published kotlin-notebook jar via
