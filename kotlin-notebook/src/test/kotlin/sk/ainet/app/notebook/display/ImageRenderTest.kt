@@ -138,7 +138,7 @@ class ImageRenderTest {
         assertContains(html, "height=\"80\"")
         assertContains(html, "class=\"thumb\"")
         assertContains(html, "style=\"border:1px solid #ccc;\"")
-        assertContains(html, "alt=\"&lt;tag&gt; &amp; sample\"") // escaped
+        assertContains(html, "alt=\"&lt;tag&gt; &amp; sample\"")
         assertContains(html, "src=\"data:image/png;base64,")
     }
 
@@ -151,7 +151,6 @@ class ImageRenderTest {
         val html = result[org.jetbrains.kotlinx.jupyter.api.MimeTypes.HTML]
             ?: error("renderGrid() should produce an HTML mime entry, got keys=${result.keys}")
         assertContains(html, "<div style=\"display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start;\">")
-        // two image tags present with width attribute
         assertTrue(Regex("<img ").findAll(html).count() >= 2)
         assertContains(html, "width=\"50\"")
         assertContains(html, "</div>")

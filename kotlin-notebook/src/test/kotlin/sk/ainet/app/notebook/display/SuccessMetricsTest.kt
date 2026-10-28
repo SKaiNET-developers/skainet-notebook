@@ -90,17 +90,8 @@ class SuccessMetricsTest {
 
     @Test
     fun no_swing_or_awt_windows_are_shown() {
-        // Run a simple render and then ensure no windows are visible.
-        val out = ByteArrayOutputStream()
-        val prev = System.out
-        try {
-            System.setOut(java.io.PrintStream(out, true, Charsets.UTF_8))
-            render(img())
-        } finally {
-            System.setOut(prev)
-        }
+        render(img())
 
-        // Validate: no AWT Frames (incl. Swing JFrame) are visible/displayable
         val frames = Frame.getFrames()
         val anyVisible = frames.any { it.isDisplayable && it.isVisible }
         assertTrue(!anyVisible, "No Swing/AWT windows should be visible during image display")

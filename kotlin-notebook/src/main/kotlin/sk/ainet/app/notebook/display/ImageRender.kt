@@ -59,9 +59,15 @@ fun pathToImage(path: Path): BufferedImage {
 }
 
 /**
- * Decode an image from a filesystem path provided as [String].
+ * Decode an image from a [String] source. Strings starting with http://, https://,
+ * or file:// are treated as URLs; everything else is a filesystem path.
  */
-fun stringToImage(path: String): BufferedImage = pathToImage(Path.of(path))
+fun stringToImage(path: String): BufferedImage =
+    if (path.startsWith("http://") || path.startsWith("https://") || path.startsWith("file://")) {
+        urlToImage(URL(path))
+    } else {
+        pathToImage(Path.of(path))
+    }
 
 /**
  * Decode an image from a [URL].
@@ -210,7 +216,7 @@ fun mimeImage(image: Any, format: String = "png"): Any {
  * Render multiple images in a responsive grid using CSS flex layout.
  * Images inherit the same options and are rendered as individual <img> tags.
  */
-fun renderGrid(images: List<BufferedImage>, configure: DisplayOptions.() -> Unit = {}):Any {
+fun renderGrid(images: List<BufferedImage>, configure: DisplayOptions.() -> Unit = {}): MimeTypedResult {
     if (images.isEmpty()) {
         return emitHtml("<div></div>")
     }
