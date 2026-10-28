@@ -89,10 +89,19 @@ val sourcesJar by tasks.registering(Jar::class) {
     archiveClassifier.set("sources")
     from(kotlin.sourceSets.main.get().kotlin)
 
-    // Also package sources from SKaiNET dependencies (if they publish sources)
+    // Also package sources from SKaiNET dependencies (if they publish sources).
+    // KMP sources jars root their files under source-set directories
+    // (commonMain/sk/ainet/..., jvmMain/sk/ainet/...). IDEs attach this jar and
+    // look sources up by package path (sk/ainet/...), so the prefix must be
+    // stripped or navigation falls back to decompiled class files.
     from(providers.provider {
         configurations["skainetSources"].resolve().map { zipTree(it) }
-    })
+    }) {
+        eachFile {
+            relativePath = RelativePath(true, *relativePath.segments.drop(1).toTypedArray())
+        }
+        includeEmptyDirs = false
+    }
 
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
