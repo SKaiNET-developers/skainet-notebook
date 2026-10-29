@@ -62,6 +62,6 @@ class SKaiNETJupyterIntegrationTest {
     @Test
     fun notebook_info_exposes_current_version() {
         // Catches a forgotten version bump when upgrading to a new SKaiNET release.
-        assertEquals("0.62.9", NotebookInfo.VERSION)
+        assertEquals("0.62.10", NotebookInfo.VERSION)
     }
 }

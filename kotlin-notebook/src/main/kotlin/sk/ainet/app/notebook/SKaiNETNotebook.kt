@@ -10,7 +10,7 @@ package sk.ainet.app.notebook
  */
 
 object NotebookInfo {
-    const val VERSION = "0.62.9"
+    const val VERSION = "0.62.10"
     const val NAME = "SKaiNET Kotlin Notebook"
 
     fun info() {
