@@ -47,10 +47,33 @@ class SKaiNETJupyterIntegration : JupyterIntegration() {
             "sk.ainet.lang.tensor.dsl.*",
             // Dtype markers: `FP32`, `FP16`, `Int8`, ...
             "sk.ainet.lang.types.*",
-            // Notebook-side helpers: typealiases, display, tensor→image tools
+            // Data sources: `JvmDataSourceResolver`, `DataSourceRequest`,
+            // dataset helpers
+            "sk.ainet.data.*",
+            "sk.ainet.data.common.*",
+            "sk.ainet.data.source.*",
+            // Frontends: `TextFrontEnds`, tokenizers, text/image pipelines
+            "sk.ainet.frontend.*",
+            "sk.ainet.frontend.tokenizer.*",
+            "sk.ainet.frontend.text.*",
+            // Model I/O: `ModelSource`, format loaders for GGUF / ONNX /
+            // SafeTensors, weight utilities
+            "sk.ainet.io.*",
+            "sk.ainet.io.model.*",
+            "sk.ainet.io.gguf.*",
+            "sk.ainet.io.onnx.*",
+            "sk.ainet.io.safetensors.*",
+            "sk.ainet.io.weights.*",
+            // Notebook-side helpers: display, tensor→image tools
             "sk.ainet.app.notebook.*",
             "sk.ainet.app.notebook.display.*",
             "sk.ainet.app.notebook.tools.*",
+            // NOTE for maintainers: a simple class name exported by TWO of the
+            // packages above makes the K2 REPL silently drop that name in
+            // later cells ("Unresolved reference", not an ambiguity error) —
+            // that is why the NotebookAliases.kt typealiases were removed in
+            // 0.62.8. When adding a package here, check the shaded jar for
+            // duplicate top-level class names against this whole list first.
         )
 
         render<Tensor<*, *>> { tensor ->
