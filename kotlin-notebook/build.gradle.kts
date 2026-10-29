@@ -161,7 +161,26 @@ tasks.shadowJar {
         include(dependency("org.jetbrains.kotlinx:kotlinx-io-.*"))
         // pbandk — weh's protocol-buffer encoded message types.
         include(dependency("pro.streem.pbandk:.*"))
+
+        // ktor — skainet-data-source's JvmDataSourceResolver constructs
+        // HttpClient(CIO) in its default fetcher. Without the full ktor client
+        // stack shaded in, the first `JvmDataSourceResolver()` in a notebook
+        // throws `NoClassDefFoundError: io/ktor/client/engine/cio/CIO`.
+        include(dependency("io.ktor:.*"))
+        // slf4j-api — referenced by ktor-client-logging and
+        // kotlinx-coroutines-slf4j. API only, deliberately no binding: a
+        // library jar must not impose a logging implementation.
+        include(dependency("org.slf4j:slf4j-api"))
+        include(dependency("org.jetbrains.kotlinx:kotlinx-coroutines-slf4j"))
+        // kotlinx-serialization — JSON parsing used by the io modules
+        // (safetensors headers) and ktor content negotiation.
+        include(dependency("org.jetbrains.kotlinx:kotlinx-serialization-.*"))
     }
+
+    // Several bundled libraries register implementations via
+    // META-INF/services (ktor engines, coroutines dispatchers). Without
+    // merging, the first service file wins and the rest are silently dropped.
+    mergeServiceFiles()
 }
 
 // Publish the shadow uber-jar as the main artifact and drop all runtime deps
