@@ -64,16 +64,32 @@ class SKaiNETJupyterIntegration : JupyterIntegration() {
             "sk.ainet.io.onnx.*",
             "sk.ainet.io.safetensors.*",
             "sk.ainet.io.weights.*",
+            // sk.ainet.io.gguf and sk.ainet.io.safetensors both declare an
+            // identical top-level `createRandomAccessSource(String)` (same
+            // body, same return type sk.ainet.io.RandomAccessSource), so the
+            // two star imports above make any unqualified call ambiguous. A
+            // NAMED import outranks star imports in Kotlin resolution, so this
+            // line picks a deterministic winner; which one wins is irrelevant
+            // as the functions are byte-identical.
+            "sk.ainet.io.safetensors.createRandomAccessSource",
             // Notebook-side helpers: display, tensor→image tools
             "sk.ainet.app.notebook.*",
             "sk.ainet.app.notebook.display.*",
             "sk.ainet.app.notebook.tools.*",
-            // NOTE for maintainers: a simple class name exported by TWO of the
-            // packages above makes the K2 REPL silently drop that name in
-            // later cells ("Unresolved reference", not an ambiguity error) —
-            // that is why the NotebookAliases.kt typealiases were removed in
-            // 0.62.8. When adding a package here, check the shaded jar for
-            // duplicate top-level class names against this whole list first.
+            // NOTE for maintainers: before adding a package here, audit the
+            // shaded jar against this whole list for TWO kinds of collisions:
+            //  1. duplicate top-level CLASS names — the K2 REPL silently drops
+            //     such a name in later cells ("Unresolved reference", not an
+            //     ambiguity error); this is why NotebookAliases.kt was removed
+            //     in 0.62.8.
+            //  2. duplicate top-level FUNCTIONS with the same signature and no
+            //     distinguishing receiver — unqualified calls become
+            //     "Overload resolution ambiguity" (0.62.9:
+            //     createRandomAccessSource, resolved by the named import
+            //     above). Same-named EXTENSION functions on different receiver
+            //     types (relu, gelu, planInput, ...) are fine.
+            // Audit: unzip the shadow jar, `javap -public` the top-level
+            // classes of every package in this list, compare simple names.
         )
 
         render<Tensor<*, *>> { tensor ->
