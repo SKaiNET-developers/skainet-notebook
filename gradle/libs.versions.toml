@@ -5,7 +5,7 @@ android-compileSdk = "36"
 kotlin = "2.4.21"
 shadow = "9.6.1"
 skainet = "0.62.4"
-dokka = "2.2.0"
+dokka = "2.3.0"
 kotlinJupyter = "0.19.0-958"
 binaryCompatibilityValidator = "0.18.2"
 # JVM-side WebAssembly runtime for Graphviz rendering. See
